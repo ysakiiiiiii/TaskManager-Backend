@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TaskManagerBackend.Data;
+using TaskManagerBackend.Models.Domain;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +14,29 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<StoreDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("TaskManagerConnection")));
+
+builder.Services.AddIdentity<User, IdentityRole>()
+    .AddRoles<IdentityRole>()
+    .AddTokenProvider<DataProtectorTokenProvider<User>>("TaskManager")
+    .AddEntityFrameworkStores<StoreDbContext>()
+    .AddDefaultTokenProviders();
+
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    // Password settings
+    options.Password.RequireDigit = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
+    // Lockout settings
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+    // User settings
+    options.User.RequireUniqueEmail = true;
+
+});
 
 var app = builder.Build();
 

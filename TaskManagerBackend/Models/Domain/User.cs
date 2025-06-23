@@ -1,14 +1,21 @@
-﻿namespace TaskManagerBackend.Models.Domain
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
+
+namespace TaskManagerBackend.Models.Domain
 {
-    public class User
-    {   
-        public int Id { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public DateTime UserCreated { get; set; }
+    public class User : IdentityUser
+    {
+        [Required]
+        [MaxLength(100)]
+        public string FirstName { get; set; } = string.Empty;
+        [Required]
+        [MaxLength(100)]
+        public string LastName { get; set; } = string.Empty;
+
+        public DateTime UserCreated { get; set; } = DateTime.UtcNow;
         public DateTime? UserModified { get; set; }
+
+        public string FullName => $"{FirstName} {LastName}";
 
     }
 }
