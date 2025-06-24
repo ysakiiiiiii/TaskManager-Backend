@@ -7,7 +7,7 @@
         public Task Task { get; set; }
 
         public string UploadedById { get; set; }
-        public User UploadedBy { get; set; }
+        public User UploadedBy { get; set; }  
 
         public string FileName { get; set; }
         public string FilePath { get; set; }

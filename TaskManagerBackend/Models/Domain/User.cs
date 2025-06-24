@@ -16,6 +16,9 @@ namespace TaskManagerBackend.Models.Domain
         public DateTime? UserModified { get; set; }
 
         public string FullName => $"{FirstName} {LastName}";
+        public ICollection<TaskAssignment> AssignedTasks { get; set; } = new List<TaskAssignment>();
+        public ICollection<Task> CreatedTasks { get; set; } = new List<Task>();
+
 
     }
 }

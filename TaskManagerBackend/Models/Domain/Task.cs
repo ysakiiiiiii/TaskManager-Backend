@@ -20,20 +20,16 @@ namespace TaskManagerBackend.Models.Domain
         public User CreatedBy { get; set; }
 
         [Required]
-        public string AssignedToId { get; set; }
-        public User AssignedTo { get; set; }
-
-        [Required]
         public int CategoryId { get; set; }
         public Category Category { get; set; }
 
         [Required]
-        [MaxLength(20)]
-        public string Priority { get; set; }  
+        public int PriorityId { get; set; }
+        public Priority Priority{ get; set; }
 
         [Required]
-        [MaxLength(20)]
-        public string Status { get; set; }  
+        public int StatusId { get; set; }
+        public Status Status { get; set; }
 
         [Required]
         public DateTime DateCreated { get; set; } = DateTime.UtcNow;
@@ -42,8 +38,9 @@ namespace TaskManagerBackend.Models.Domain
 
         public DateTime? DueDate { get; set; }
 
-        public ICollection<ChecklistItem> CheckListItems { get; set; }
-        public ICollection<Comment> Comments { get; set; }
-        public ICollection<Attachment> Attachments { get; set; }
+        public ICollection<TaskAssignment> AssignedUsers { get; set; } = new List<TaskAssignment>();
+        public ICollection<ChecklistItem> CheckListItems { get; set; } = new List<ChecklistItem>();
+        public ICollection<Comment>? Comments { get; set; } = new List<Comment>();
+        public ICollection<Attachment>? Attachments { get; set; } = new List<Attachment>();
     }
 }
