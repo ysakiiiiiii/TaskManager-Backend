@@ -8,11 +8,11 @@ namespace TaskManagerBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class UserController : ControllerBase
     {
         private readonly UserManager<User> userManager;
 
-        public AuthController(UserManager<User> userManager)
+        public UserController(UserManager<User> userManager)
         {
             this.userManager = userManager;
         }
