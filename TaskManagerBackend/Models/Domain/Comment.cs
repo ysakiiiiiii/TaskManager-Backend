@@ -4,14 +4,14 @@
     {
         public int Id { get; set; }
         public int TaskId { get; set; }
-        public Task Task { get; set; }
-
         public string UserId { get; set; }
-        public User User { get; set; }
-
         public string Content { get; set; }
-
         public DateTime DateCreated { get; set; } = DateTime.UtcNow;
         public DateTime? DateUpdated { get; set; }
+
+        //Foreign Key Relationships
+        public TaskItem Task { get; set; }
+        public User User { get; set; }
     }
+
 }

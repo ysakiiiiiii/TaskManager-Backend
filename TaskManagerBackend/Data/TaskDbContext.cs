@@ -2,20 +2,20 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TaskManagerBackend.Models.Domain;
-using Task = TaskManagerBackend.Models.Domain.Task;
+using TaskItem = TaskManagerBackend.Models.Domain.TaskItem;
 
 namespace TaskManagerBackend.Data
 {
-    public class StoreDbContext : IdentityDbContext<User>
+    public class TaskDbContext : IdentityDbContext<User>
     {
-        public StoreDbContext(DbContextOptions options) : base(options)
+        public TaskDbContext(DbContextOptions options) : base(options)
         {
 
         }
 
-        public DbSet<Task> Tasks { get; set; }
+        public DbSet<TaskItem> Tasks { get; set; }
         public DbSet<Category> Categories { get; set; }
-        public DbSet<ChecklistItem> ChecklistItems { get; set; }
+        public DbSet<CheckList> ChecklistItems { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Attachment> Attachments { get; set; }
         public DbSet<Priority> Priorities { get; set; }
@@ -70,24 +70,24 @@ namespace TaskManagerBackend.Data
             builder.Entity<Status>().HasData(statuses);
 
             //TASK RELATIONSHIPS MODEL DEFINITIONS
-            builder.Entity<Task>()
+            builder.Entity<TaskItem>()
                 .HasOne(t => t.CreatedBy)
                 .WithMany(u => u.CreatedTasks)
                 .HasForeignKey(t => t.CreatedById)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
 
-            builder.Entity<Task>()
+            builder.Entity<TaskItem>()
                 .HasOne(t => t.Category)
                 .WithMany(c => c.Tasks)
                 .HasForeignKey(t => t.CategoryId);
 
-            builder.Entity<Task>()
+            builder.Entity<TaskItem>()
                 .HasOne(t => t.Priority)
                 .WithMany()
                 .HasForeignKey(t => t.PriorityId);
 
-            builder.Entity<Task>()
+            builder.Entity<TaskItem>()
                 .HasOne(t => t.Status)
                 .WithMany()
                 .HasForeignKey(t => t.StatusId);
@@ -130,7 +130,7 @@ namespace TaskManagerBackend.Data
                 .HasForeignKey(ta => ta.UserId);
 
 
-            builder.Entity<ChecklistItem>()
+            builder.Entity<CheckList>()
                 .HasOne(cl => cl.Task)
                 .WithMany(t => t.CheckListItems)
                 .HasForeignKey(cl => cl.TaskId);

@@ -3,7 +3,6 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TaskManagerBackend.Data;
 
@@ -11,12 +10,10 @@ using TaskManagerBackend.Data;
 
 namespace TaskManagerBackend.Migrations
 {
-    [DbContext(typeof(StoreDbContext))]
-    [Migration("20250624083130_Table Insertion")]
-    partial class TableInsertion
+    [DbContext(typeof(TaskDbContext))]
+    partial class TaskDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -359,7 +356,22 @@ namespace TaskManagerBackend.Migrations
                         });
                 });
 
-            modelBuilder.Entity("TaskManagerBackend.Models.Domain.Task", b =>
+            modelBuilder.Entity("TaskManagerBackend.Models.Domain.TaskAssignment", b =>
+                {
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("TaskId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TaskAssignment");
+                });
+
+            modelBuilder.Entity("TaskManagerBackend.Models.Domain.TaskItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -382,8 +394,7 @@ namespace TaskManagerBackend.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
@@ -396,8 +407,7 @@ namespace TaskManagerBackend.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -410,21 +420,6 @@ namespace TaskManagerBackend.Migrations
                     b.HasIndex("StatusId");
 
                     b.ToTable("Tasks");
-                });
-
-            modelBuilder.Entity("TaskManagerBackend.Models.Domain.TaskAssignment", b =>
-                {
-                    b.Property<int>("TaskId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("TaskId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("TaskAssignment");
                 });
 
             modelBuilder.Entity("TaskManagerBackend.Models.Domain.User", b =>
@@ -561,7 +556,7 @@ namespace TaskManagerBackend.Migrations
 
             modelBuilder.Entity("TaskManagerBackend.Models.Domain.Attachment", b =>
                 {
-                    b.HasOne("TaskManagerBackend.Models.Domain.Task", "Task")
+                    b.HasOne("TaskManagerBackend.Models.Domain.TaskItem", "Task")
                         .WithMany("Attachments")
                         .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -580,7 +575,7 @@ namespace TaskManagerBackend.Migrations
 
             modelBuilder.Entity("TaskManagerBackend.Models.Domain.ChecklistItem", b =>
                 {
-                    b.HasOne("TaskManagerBackend.Models.Domain.Task", "Task")
+                    b.HasOne("TaskManagerBackend.Models.Domain.TaskItem", "Task")
                         .WithMany("CheckListItems")
                         .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -591,7 +586,7 @@ namespace TaskManagerBackend.Migrations
 
             modelBuilder.Entity("TaskManagerBackend.Models.Domain.Comment", b =>
                 {
-                    b.HasOne("TaskManagerBackend.Models.Domain.Task", "Task")
+                    b.HasOne("TaskManagerBackend.Models.Domain.TaskItem", "Task")
                         .WithMany("Comments")
                         .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -608,7 +603,26 @@ namespace TaskManagerBackend.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("TaskManagerBackend.Models.Domain.Task", b =>
+            modelBuilder.Entity("TaskManagerBackend.Models.Domain.TaskAssignment", b =>
+                {
+                    b.HasOne("TaskManagerBackend.Models.Domain.TaskItem", "Task")
+                        .WithMany("AssignedUsers")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TaskManagerBackend.Models.Domain.User", "User")
+                        .WithMany("AssignedTasks")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TaskManagerBackend.Models.Domain.TaskItem", b =>
                 {
                     b.HasOne("TaskManagerBackend.Models.Domain.Category", "Category")
                         .WithMany("Tasks")
@@ -643,31 +657,12 @@ namespace TaskManagerBackend.Migrations
                     b.Navigation("Status");
                 });
 
-            modelBuilder.Entity("TaskManagerBackend.Models.Domain.TaskAssignment", b =>
-                {
-                    b.HasOne("TaskManagerBackend.Models.Domain.Task", "Task")
-                        .WithMany("AssignedUsers")
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("TaskManagerBackend.Models.Domain.User", "User")
-                        .WithMany("AssignedTasks")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Task");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("TaskManagerBackend.Models.Domain.Category", b =>
                 {
                     b.Navigation("Tasks");
                 });
 
-            modelBuilder.Entity("TaskManagerBackend.Models.Domain.Task", b =>
+            modelBuilder.Entity("TaskManagerBackend.Models.Domain.TaskItem", b =>
                 {
                     b.Navigation("AssignedUsers");
 

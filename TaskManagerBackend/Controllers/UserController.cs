@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using TaskManagerBackend.DTOs;
+using TaskManagerBackend.DTOs.User;
 using TaskManagerBackend.Models.Domain;
+using TaskManagerBackend.Repositories;
 
 namespace TaskManagerBackend.Controllers
 {
@@ -11,10 +12,12 @@ namespace TaskManagerBackend.Controllers
     public class UserController : ControllerBase
     {
         private readonly UserManager<User> userManager;
+        private readonly ITokenRepository tokenRepository;
 
-        public UserController(UserManager<User> userManager)
+        public UserController(UserManager<User> userManager, ITokenRepository tokenRepository)
         {
             this.userManager = userManager;
+            this.tokenRepository = tokenRepository;
         }
 
         [HttpPost]
@@ -39,7 +42,7 @@ namespace TaskManagerBackend.Controllers
                 });
             }
 
-            var roleResult = await userManager.AddToRoleAsync(user, "User");
+            var roleResult = await userManager.AddToRoleAsync(user, "Admin");
 
             if (!roleResult.Succeeded)
             {
@@ -63,17 +66,27 @@ namespace TaskManagerBackend.Controllers
                 var isPasswordValid = await userManager.CheckPasswordAsync(user, loginRequestDto.Password);
                 if (isPasswordValid)
                 {
-                    return Ok("Login Successful");
+                    var roles = await userManager.GetRolesAsync(user);
+                    
+                    if (roles != null)
+                    {
+                        var jwtToken = tokenRepository.CreateJWTToken(user, roles.ToList());
+                        var response = new LoginResponseDto
+                        {
+                            JwtToken = jwtToken
+                        };
+
+                         return Ok(response);
+                    }
+
                 }
                 else
                 {
                     return Unauthorized("Invalid Password");
                 }
             }
-            else
-            {
-                return NotFound("User not found");
-            }
+
+           return NotFound("User not found");
         }
     }
 }
