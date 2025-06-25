@@ -11,6 +11,6 @@ namespace TaskManagerBackend.Models.Domain
         [MaxLength(100)]
         public string Name { get; set; }
 
-        public ICollection<Task> Tasks { get; set; } = new List<Task>();
+        public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
     }
 }
