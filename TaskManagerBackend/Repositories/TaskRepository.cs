@@ -35,6 +35,14 @@ namespace TaskManagerBackend.Repositories
                 .FirstOrDefaultAsync(t => t.Id == task.Id) ?? task;
         }
 
-
+        public async Task<List<TaskItem>> GetAllTasksAsync()
+        {
+            return await dbContext.Tasks
+                .Include(t => t.AssignedUsers)
+                    .ThenInclude(ta => ta.User)
+                .Include(t => t.CheckListItems)
+                .Include(t => t.Attachments)
+                .ToListAsync();
+        }
     }
 }

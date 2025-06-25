@@ -25,6 +25,18 @@ namespace TaskManagerBackend.Controllers
             this.mapper = mapper;
         }
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetAllTasks()
+        {
+            var tasks = await taskRepository.GetAllTasksAsync();
+            if (tasks == null || !tasks.Any())
+                return NotFound(new { Message = "No tasks found." });
+
+            var taskDtos = mapper.Map<List<TaskDto>>(tasks);
+            return Ok(taskDtos);
+        }
+
         [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTaskById(int id)
