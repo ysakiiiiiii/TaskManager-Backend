@@ -13,7 +13,7 @@ namespace TaskManagerBackend.DTOs.Task
         public int? PriorityId { get; set; }
         public int? StatusId { get; set; }
         public DateTime? DueDate { get; set; }
-        public List<ChecklistItemDto>? ChecklistItems { get; set; }
+        public List<AddCheckListItemDto>? ChecklistItems { get; set; }
         public List<string>? AssignedUserIds { get; set; }
     }
 }

@@ -19,9 +19,6 @@ namespace TaskManagerBackend.DTOs.Task
             public string Description { get; set; }
 
             [Required]
-            public string CreatedById { get; set; }
-
-            [Required]
             public int CategoryId { get; set; }
 
             [Required]
@@ -32,8 +29,8 @@ namespace TaskManagerBackend.DTOs.Task
 
             public DateTime? DueDate { get; set; } = null;
             public List<string> AssignedUsersId { get; set; } = new();
-            public List<string> ChecklistItemsId { get; set; } = new();
-            public List<string>? AttachmentsId { get; set; } = new();
+            public List<AddCheckListItemDto> ChecklistItems { get; set; } = new();
+            public List<AddAttachmentDto>? Attachments { get; set; } = new();
 
     }
 }
