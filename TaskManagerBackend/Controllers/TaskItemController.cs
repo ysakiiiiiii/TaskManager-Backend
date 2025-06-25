@@ -53,8 +53,6 @@ namespace TaskManagerBackend.Controllers
         [Authorize]
         public async Task<IActionResult> CreateTask([FromBody] AddTaskRequestDto requestDto)
         {
-
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (userId != null)
@@ -112,18 +110,19 @@ namespace TaskManagerBackend.Controllers
             return BadRequest();
         }
 
-        [Authorize]
-        [HttpGet("debug")]
-        public IActionResult Debug()
-        {
-            var claims = User?.Claims.Select(c => new { c.Type, c.Value }).ToList();
-            return Ok(new
-            {
-                Message = "Claims from token",
-                Claims = claims
-            });
-        }
 
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteTask([FromRoute] int id)
+        {
+            var deleted = await taskRepository.DeleteTaskAsync(id);
+            if (deleted == null)
+            {
+                return NotFound();
+            }
+
+            return Ok("Task deleted successfully.");
+        }
 
     }
 }

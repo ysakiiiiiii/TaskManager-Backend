@@ -44,5 +44,24 @@ namespace TaskManagerBackend.Repositories
                 .Include(t => t.Attachments)
                 .ToListAsync();
         }
+
+        public async Task<TaskItem?> DeleteTaskAsync(int id)
+        {
+            var task= await dbContext.Tasks
+                .Include(t => t.AssignedUsers)
+                    .ThenInclude(ta => ta.User)
+                .Include(t => t.CheckListItems)
+                .Include(t => t.Attachments)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (task == null)
+            {
+                return null;
+            }
+
+            dbContext.Tasks.Remove(task);
+            await dbContext.SaveChangesAsync();
+            return task;
+                }
     }
 }
