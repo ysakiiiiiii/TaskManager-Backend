@@ -25,7 +25,7 @@ namespace TaskManagerBackend.DTOs.Task
         public DateTime? DueDate { get; set; } 
 
         public List<TaskAssignmentDto> AssignedUsers { get; set; } = new();
-        public List<ChecklistItemDto> ChecklistItems { get; set; } = new();
+        public List<CheckListDto> ChecklistItems { get; set; } = new();
         public List<CommentDto>? Comments { get; set; } = new();
         public List<AttachmentDto>? Attachments { get; set; } = new();
     }

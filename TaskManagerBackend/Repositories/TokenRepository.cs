@@ -16,18 +16,18 @@ namespace TaskManagerBackend.Repositories
         }
         public string CreateJWTToken(User user, List<string> roles)
         {
-            //Create claims
-            var claims = new List<Claim>();
-            
-            claims.Add( new Claim(ClaimTypes.Email, user.Email));
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Email, user.Email)
+            };
 
             foreach (var role in roles)
             {
-                claims.Add(new Claim(ClaimTypes.Role, role));
+                claims.Add(new Claim(ClaimTypes.Role, role));         
             }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]));
-
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
@@ -39,7 +39,7 @@ namespace TaskManagerBackend.Repositories
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
-
         }
+
     }
 }

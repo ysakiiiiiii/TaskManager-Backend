@@ -4,6 +4,8 @@ namespace TaskManagerBackend.Repositories
 {
     public interface ITaskRepository
     {
-        Task<TaskItem> CreateAsync(TaskItem taskItem);
+        Task<TaskItem> CreateTaskAsync(TaskItem task);
+        Task<TaskItem?> GetTaskByIdAsync(int id);
+
     }
 }

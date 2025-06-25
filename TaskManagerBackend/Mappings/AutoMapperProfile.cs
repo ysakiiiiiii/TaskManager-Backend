@@ -1,18 +1,22 @@
 ﻿using AutoMapper;
 using TaskManagerBackend.DTOs.Attachment;
 using TaskManagerBackend.DTOs.CheckList;
-using TaskManagerBackend.DTOs.Comment;
 using TaskManagerBackend.DTOs.Task;
-using TaskManagerBackend.DTOs.User;
+using TaskManagerBackend.DTOs.TaskAssignment;
 using TaskManagerBackend.Models.Domain;
+
 
 namespace TaskManagerBackend.Mappings
 {
     public class AutoMappingProfile : Profile
     {
         public AutoMappingProfile()
-        {       
-
+        {
+            CreateMap<TaskItem, TaskDto>().ReverseMap();
+            CreateMap<TaskAssignment, TaskAssignmentDto>().ReverseMap();
+            CreateMap<CheckList, CheckListDto>().ReverseMap();
+            CreateMap<Attachment, AttachmentDto>().ReverseMap();
         }
     }
+
 }
