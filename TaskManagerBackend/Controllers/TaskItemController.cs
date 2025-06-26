@@ -1,14 +1,7 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text.Json;
-using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TaskManagerBackend.DTOs.Task;
-using TaskManagerBackend.Models.Domain;
-using TaskManagerBackend.Repositories;
 
 namespace TaskManagerBackend.Controllers
 {
@@ -16,102 +9,71 @@ namespace TaskManagerBackend.Controllers
     [ApiController]
     public class TaskItemController : ControllerBase
     {
-        private readonly ITaskRepository taskRepository;
-        private readonly IMapper mapper;
+        private readonly ITaskService taskService;
 
-        public TaskItemController(ITaskRepository taskRepository, IMapper mapper)
+        public TaskItemController(ITaskService taskService)
         {
-            this.taskRepository = taskRepository;
-            this.mapper = mapper;
+            this.taskService = taskService;
         }
 
+        [HttpGet]
         [Authorize]
+        public async Task<IActionResult> GetAllTasks()
+        {
+            var tasks = await taskService.GetAllTasksAsync();
+            if (tasks == null || !tasks.Any())
+                return NotFound(new { Message = "No tasks found." });
+
+            return Ok(tasks);
+        }
+
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<IActionResult> GetTaskById(int id)
         {
-            var task = await taskRepository.GetTaskByIdAsync(id);
+            var task = await taskService.GetTaskByIdAsync(id);
             if (task == null)
-                return NotFound();
+                return NotFound(new { Message = "Task not found." });
 
-            var taskDto = mapper.Map<TaskDto>(task);
-            return Ok(taskDto);
+            return Ok(task);
         }
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> CreateTask([FromBody] AddTaskRequestDto requestDto)
+        public async Task<IActionResult> CreateTask([FromBody] AddTaskRequestDto dto)
         {
-
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Unauthorized();
 
-            if (userId != null)
-            {
-                var taskItem = new TaskItem
-                {
-                    Title = requestDto.Title,
-                    Description = requestDto.Description,
-                    CategoryId = requestDto.CategoryId,
-                    PriorityId = requestDto.PriorityId,
-                    StatusId = requestDto.StatusId,
-                    DueDate = requestDto.DueDate,
-                    CreatedById = userId,
-                    DateCreated = DateTime.UtcNow,
-                };
-
-                // Assigned users via navigation property
-                taskItem.AssignedUsers = requestDto.AssignedUsersId
-                    .Select(assignedUserId => new TaskAssignment
-                    {
-                        UserId = assignedUserId,
-                        Task = taskItem
-                    }).ToList();
-
-                // Checklist items
-                taskItem.CheckListItems = requestDto.ChecklistItems
-                    .Select(item => new CheckList
-                    {
-                        Description = item.Description,
-                        IsCompleted = false,
-                        Task = taskItem
-                    }).ToList();
-                  
-                // Attachments
-                if (requestDto.Attachments != null)
-                {
-                    taskItem.Attachments = requestDto.Attachments
-                        .Select(att => new Attachment
-                        {
-                            FileName = att.FileName,
-                            FilePath = att.FilePath,
-                            UploadedById = userId,
-                            Task = taskItem
-                        }).ToList();
-                }
-
-                var createdTask = await taskRepository.CreateTaskAsync(taskItem);
-
-                
-                var taskDto = mapper.Map<TaskDto>(createdTask);
-                return CreatedAtAction(nameof(GetTaskById), new { id = taskDto.Id }, taskDto);
-
-            }
-
-            return BadRequest();
+            var createdTask = await taskService.CreateTaskAsync(dto, userId);
+            return CreatedAtAction(nameof(GetTaskById), new { id = createdTask.Id }, createdTask);
         }
 
+        [HttpPut("{id}")]
         [Authorize]
-        [HttpGet("debug")]
-        public IActionResult Debug()
+        public async Task<IActionResult> UpdateTask([FromRoute] int id, [FromBody] UpdateTaskRequestDto dto)
         {
-            var claims = User?.Claims.Select(c => new { c.Type, c.Value }).ToList();
-            return Ok(new
-            {
-                Message = "Claims from token",
-                Claims = claims
-            });
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Unauthorized();
+
+            var updatedTask = await taskService.UpdateTaskAsync(id, dto, userId);
+            if (updatedTask == null)
+                return NotFound(new { Message = "Task not found." });
+
+            return Ok(updatedTask);
         }
 
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteTask([FromRoute] int id)
+        {
+            var result = await taskService.DeleteTaskAsync(id);
+            if (!result)
+                return NotFound(new { Message = "Task not found or already deleted." });
 
+            return Ok(new { Message = "Task deleted successfully." });
+        }
     }
 }

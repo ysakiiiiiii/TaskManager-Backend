@@ -95,6 +95,7 @@ builder.Services.Configure<IdentityOptions>(options =>
         };
     });
 
+builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();
 builder.Services.AddAutoMapper(typeof(AutoMappingProfile));

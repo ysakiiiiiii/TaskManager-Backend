@@ -3,11 +3,11 @@ using TaskManagerBackend.DTOs.CheckList;
 
 namespace TaskManagerBackend.DTOs.Task
 {
-    public class UpdataTaskDto
+    public class UpdateTaskRequestDto
     {
-        [MaxLength(100)] 
+        [MaxLength(100)]
         public string? Title { get; set; }
-        [MaxLength(1000)] 
+        [MaxLength(1000)]
         public string? Description { get; set; }
         public int? CategoryId { get; set; }
         public int? PriorityId { get; set; }
@@ -17,3 +17,4 @@ namespace TaskManagerBackend.DTOs.Task
         public List<string>? AssignedUserIds { get; set; }
     }
 }
+

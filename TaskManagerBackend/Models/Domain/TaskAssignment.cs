@@ -1,5 +1,6 @@
 ﻿namespace TaskManagerBackend.Models.Domain
 {
+
     public class TaskAssignment
     {
         public int TaskId { get; set; }

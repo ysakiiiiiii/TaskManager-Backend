@@ -1,0 +1,34 @@
+﻿{
+  "title": "Design Landing Page",
+  "description": "Create wireframes and implement the main hero section for the landing page.",
+  "categoryId": 1,
+  "priorityId": 1,
+  "statusId": 1,
+  "dueDate": "2025-06-30T17:00:00.000Z",
+  "assignedUsersId": [
+    "7958c070-fd3f-47db-afb1-516a6c215bd7",
+    "8827adf7-a794-4e94-9842-8d481f686dfe",
+    "bb50933d-fb0a-4791-bd02-ba43d4dcb5fb"
+  ],
+  "checklistItems": [
+    {
+      "description": "Create Figma wireframes"
+    },
+    {
+      "description": "Review with design team"
+    },
+    {
+      "description": "Code hero section with Tailwind"
+    }
+  ],
+  "attachments": [
+    {
+      "fileName": "landing_wireframe.png",
+      "filePath": "/uploads/designs/landing_wireframe.png"
+    },
+    {
+      "fileName": "style_guide.pdf",
+      "filePath": "/uploads/docs/style_guide.pdf"
+    }
+  ]
+}
