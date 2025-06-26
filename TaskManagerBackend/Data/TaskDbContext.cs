@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System.Reflection.Emit;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TaskManagerBackend.Models.Domain;
@@ -20,6 +21,8 @@ namespace TaskManagerBackend.Data
         public DbSet<Attachment> Attachments { get; set; }
         public DbSet<Priority> Priorities { get; set; }
         public DbSet<Status> Statuses { get; set; }
+        public DbSet<TaskAssignment> TaskAssignments { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -115,6 +118,9 @@ namespace TaskManagerBackend.Data
                 .WithMany()
                 .HasForeignKey(a => a.UploadedById)
                 .OnDelete(DeleteBehavior.Restrict);
+            
+            builder.Entity<TaskAssignment>()
+                .ToTable("TaskAssignments");
 
             builder.Entity<TaskAssignment>()
                 .HasKey(ta => new { ta.TaskId, ta.UserId });
