@@ -75,14 +75,14 @@ namespace TaskManagerBackend.Data
             //TASK RELATIONSHIPS MODEL DEFINITIONS
             builder.Entity<TaskItem>()
                 .HasOne(t => t.CreatedBy)
-                .WithMany(u => u.CreatedTasks)
+                .WithMany()
                 .HasForeignKey(t => t.CreatedById)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
 
             builder.Entity<TaskItem>()
                 .HasOne(t => t.Category)
-                .WithMany(c => c.Tasks)
+                .WithMany()
                 .HasForeignKey(t => t.CategoryId);
 
             builder.Entity<TaskItem>()
@@ -132,7 +132,7 @@ namespace TaskManagerBackend.Data
 
             builder.Entity<TaskAssignment>()
                 .HasOne(ta => ta.User)
-                .WithMany(u => u.AssignedTasks)
+                .WithMany()
                 .HasForeignKey(ta => ta.UserId);
 
 
