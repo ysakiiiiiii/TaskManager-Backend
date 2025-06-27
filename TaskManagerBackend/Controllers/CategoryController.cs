@@ -18,6 +18,14 @@ namespace TaskManagerBackend.Controllers
         }
 
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetAllCategory()
+        {
+            var categories = await categoryService.GetAllCategoriesAsync();
+            return Ok(categories);
+        }
+
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CreateCategory([FromBody]AddCategoryRequestDto categoryRequestDto)
@@ -29,6 +37,12 @@ namespace TaskManagerBackend.Controllers
             }
 
             return BadRequest("Invalid category data provided.");
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> UpdateCategoryAsync([FromRoute]int id, [FromBody])
+        {
+
         }
 
     }
