@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using TaskManagerBackend.DTOs.Category;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories;
@@ -35,6 +36,16 @@ namespace TaskManagerBackend.Services
             return mapper.Map<CategoryDto>(createdCategory);
         }
 
+        public async Task<CategoryDto?> UpdateCategoryAsync(int id, UpdateCategoryRequestDto updateCategoryRequestDto)
+        {
+            var existingCategory = await categoryRepository.GetCategoryByIdAsync(id);
 
+            if (existingCategory == null) return null;
+
+            existingCategory.Name = updateCategoryRequestDto.Name;
+
+            var updatedCategory = await categoryRepository.UpdateCategoryAsync(id, existingCategory);
+            return mapper.Map<CategoryDto>(updatedCategory);
+        }
     }
 }

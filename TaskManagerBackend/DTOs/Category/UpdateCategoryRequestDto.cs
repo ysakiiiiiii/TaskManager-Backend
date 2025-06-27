@@ -2,7 +2,7 @@
 
 namespace TaskManagerBackend.DTOs.Category
 {
-    public class UpdateTaskRequestDto
+    public class UpdateCategoryRequestDto
     {
         [Required]
         [MaxLength(100)]

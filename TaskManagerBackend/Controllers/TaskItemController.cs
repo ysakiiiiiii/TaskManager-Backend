@@ -52,14 +52,14 @@ namespace TaskManagerBackend.Controllers
 
         [HttpPut("{id}")]
         [Authorize]
-        public async Task<IActionResult> UpdateTask([FromRoute] int id, [FromBody] UpdateTaskRequestDto dto)
+        public async Task<IActionResult> UpdateTask([FromRoute] int id, [FromBody] UpdateTaskRequestDto updateTaskRequestDto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
                 return Unauthorized();
 
-            var updatedTask = await taskService.UpdateTaskAsync(id, dto, userId);
-            if (updatedTask == null)
+            var updatedTask = await taskService.UpdateTaskAsync(id, updateTaskRequestDto, userId);
+            if (updatedTask == null || updatedTask.Id == 0)
                 return NotFound(new { Message = "Task not found." });
 
             return Ok(updatedTask);
