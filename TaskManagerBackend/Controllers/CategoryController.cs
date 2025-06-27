@@ -26,24 +26,36 @@ namespace TaskManagerBackend.Controllers
             return Ok(categories);
         }
 
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetTaskById(int id)
+        {
+            var task = await categoryService.GetCategoryByIdAsync(id);
+            if (task == null)
+                return NotFound(new { Message = "Task not found." });
+
+            return Ok(task);
+        }
+
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> CreateCategory([FromBody]AddCategoryRequestDto categoryRequestDto)
+        public async Task<IActionResult> CreateCategory([FromBody] AddCategoryRequestDto categoryRequestDto)
         {
             if (categoryRequestDto != null)
             {
-                var createdCategory  = await categoryService.CreateCategoryAsync(categoryRequestDto);
-                return Ok("Successfully created category");
+                var createdCategory = await categoryService.CreateCategoryAsync(categoryRequestDto);
+                return CreatedAtAction(nameof(GetAllCategory), new { id = createdCategory.Id }, createdCategory);
             }
 
             return BadRequest("Invalid category data provided.");
         }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateCategoryAsync([FromRoute]int id, [FromBody]UpdateCategoryRequestDto updateCategoryRequestDto)
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateCategoryAsync([FromRoute] int id, [FromBody] UpdateCategoryRequestDto updateCategoryRequestDto)
         {
             var updatedCategory = await categoryService.UpdateCategoryAsync(id, updateCategoryRequestDto);
-            if(updatedCategory == null || updatedCategory.Id == 0)
+            if (updatedCategory == null || updatedCategory.Id == 0)
             {
                 return NotFound(new { Message = "Category not found or update failed." });
             }
@@ -52,6 +64,17 @@ namespace TaskManagerBackend.Controllers
 
         }
 
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteCategoryAsync([FromRoute] int id)
+        {
+            var result = await categoryService.DeleteCategoryAsync(id);
+            if (!result)
+            {
+                return NotFound(new { Message = "Category not found or deletion failed." });
+            }
+            return Ok(new { Message = "Category deleted successfully." });
+        }
     }
 }
                 
