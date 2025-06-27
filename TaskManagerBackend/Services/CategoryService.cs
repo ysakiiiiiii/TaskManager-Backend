@@ -15,6 +15,14 @@ namespace TaskManagerBackend.Services
             this.categoryRepository = categoryRepository;
             this.mapper = mapper;
         }
+
+        public async Task<List<CategoryDto>> GetAllCategoriesAsync()
+        {
+            var categories = await categoryRepository.GetAllCategoryAsync();
+
+            return mapper.Map<List<CategoryDto>>(categories);
+        }
+
         public async Task<CategoryDto> CreateCategoryAsync(AddCategoryRequestDto categoryRequestDto)
         {
             var category = new Category
@@ -26,5 +34,7 @@ namespace TaskManagerBackend.Services
 
             return mapper.Map<CategoryDto>(createdCategory);
         }
+
+
     }
 }
