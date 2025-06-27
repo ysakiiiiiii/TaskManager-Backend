@@ -40,8 +40,15 @@ namespace TaskManagerBackend.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> UpdateCategoryAsync([FromRoute]int id, [FromBody])
+        public async Task<IActionResult> UpdateCategoryAsync([FromRoute]int id, [FromBody]UpdateCategoryRequestDto updateCategoryRequestDto)
         {
+            var updatedCategory = await categoryService.UpdateCategoryAsync(id, updateCategoryRequestDto);
+            if(updatedCategory == null || updatedCategory.Id == 0)
+            {
+                return NotFound(new { Message = "Category not found or update failed." });
+            }
+
+            return Ok(updatedCategory);
 
         }
 

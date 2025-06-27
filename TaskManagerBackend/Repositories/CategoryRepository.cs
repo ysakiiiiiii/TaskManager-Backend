@@ -13,6 +13,8 @@ namespace TaskManagerBackend.Repositories
             this.dbContext = dbContext;
         }
 
+        public async Task<Category?> GetCategoryByIdAsync(int id) => await dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id);
+
         public async Task<List<Category>> GetAllCategoryAsync() => await dbContext.Categories.ToListAsync();
 
         public async Task<Category> CreateCategoryAsync(Category category)
@@ -22,7 +24,13 @@ namespace TaskManagerBackend.Repositories
             return category;
         }
 
-        public as
+        public async Task<Category> UpdateCategoryAsync(int id, Category category)
+        {
+            dbContext.Categories.Update(category);
+            await dbContext.SaveChangesAsync();
+            return category;
+        }
+
 
     }
 }
