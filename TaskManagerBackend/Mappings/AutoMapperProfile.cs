@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using TaskManagerBackend.DTOs.Attachment;
+using TaskManagerBackend.DTOs.Category;
 using TaskManagerBackend.DTOs.CheckList;
 using TaskManagerBackend.DTOs.Task;
 using TaskManagerBackend.DTOs.TaskAssignment;
@@ -16,6 +17,9 @@ namespace TaskManagerBackend.Mappings
             CreateMap<TaskAssignment, TaskAssignmentDto>().ReverseMap();
             CreateMap<CheckList, CheckListDto>().ReverseMap();
             CreateMap<Attachment, AttachmentDto>().ReverseMap();
+
+
+            CreateMap<Category, CategoryDto>().ReverseMap();
         }
     }
 

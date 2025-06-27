@@ -8,6 +8,7 @@ using TaskManagerBackend.Data;
 using TaskManagerBackend.Mappings;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories;
+using TaskManagerBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddConsole();
@@ -97,6 +98,10 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();
 builder.Services.AddAutoMapper(typeof(AutoMappingProfile));
 
