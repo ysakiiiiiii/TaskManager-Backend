@@ -31,6 +31,13 @@ namespace TaskManagerBackend.Repositories
             return category;
         }
 
-
+        public async Task<Category> DeleteCategoryAsync(int id)
+        {
+            var category = dbContext.Categories.FirstOrDefault(c => c.Id == id);
+            if (category == null) return null;
+            dbContext.Remove(category);
+            await dbContext.SaveChangesAsync();
+            return category;
+        }
     }
 }
