@@ -13,14 +13,33 @@ namespace TaskManagerBackend.Repositories
             this.dbContext = dbContext;
         }
 
-        public async Task<Comment> CreateComment(Comment comment)
+        public async Task<Comment> CreateCommentAsync(Comment comment)
         {
             await dbContext.AddAsync(comment);
             await dbContext.SaveChangesAsync();
             return comment;
         }
 
-        public async Task<List<Comment>> GetCommentsByTask(int taskId)
+        public async Task<Comment> DeleteCommentAsync(int commentId)
+        {
+            var comment = await dbContext.Comments.FindAsync(commentId);
+            if (comment == null)
+            {
+                return null;
+            }
+            dbContext.Comments.Remove(comment);
+            await dbContext.SaveChangesAsync();
+            return comment;
+        }
+
+        public async Task<Comment> GetCommentByIdAsync(int commentId)
+        {
+            var comment = await dbContext.Comments.FirstOrDefaultAsync(c => c.Id == commentId);
+            return comment;
+
+        }
+
+        public async Task<List<Comment>> GetCommentsByTaskAsync(int taskId)
         {
             var comments = await dbContext.Comments
                 .Where(c => c.TaskId == taskId)

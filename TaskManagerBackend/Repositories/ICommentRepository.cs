@@ -4,7 +4,9 @@ namespace TaskManagerBackend.Repositories
 {
     public interface ICommentRepository
     {
-        Task<List<Comment>> GetCommentsByTask(int taskId);
-        Task<Comment> CreateComment(Comment comment);
+        Task<List<Comment>> GetCommentsByTaskAsync(int taskId);
+        Task<Comment> GetCommentByIdAsync(int commentId);
+        Task<Comment> CreateCommentAsync(Comment comment);
+        Task<Comment> DeleteCommentAsync(int commentId);
     }
 }
