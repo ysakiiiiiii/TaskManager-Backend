@@ -5,7 +5,7 @@ namespace TaskManagerBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AttachmentControllers : ControllerBase
+    public class AttachmentController : ControllerBase
     {
 
     }
