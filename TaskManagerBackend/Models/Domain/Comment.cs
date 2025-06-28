@@ -6,7 +6,7 @@
         public int TaskId { get; set; }
         public string UserId { get; set; }
         public string Content { get; set; }
-        public DateTime DateCreated { get; set; } = DateTime.UtcNow;
+        public DateTime DateCreated { get; set; }
         public DateTime? DateUpdated { get; set; }
 
         //Foreign Key Relationships

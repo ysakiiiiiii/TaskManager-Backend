@@ -2,6 +2,7 @@
 using TaskManagerBackend.DTOs.Attachment;
 using TaskManagerBackend.DTOs.Category;
 using TaskManagerBackend.DTOs.CheckList;
+using TaskManagerBackend.DTOs.Comment;
 using TaskManagerBackend.DTOs.Task;
 using TaskManagerBackend.DTOs.TaskAssignment;
 using TaskManagerBackend.Models.Domain;
@@ -20,6 +21,8 @@ namespace TaskManagerBackend.Mappings
 
 
             CreateMap<Category, CategoryDto>().ReverseMap();
+
+            CreateMap<Comment, CommentDto>().ReverseMap();
         }
     }
 
