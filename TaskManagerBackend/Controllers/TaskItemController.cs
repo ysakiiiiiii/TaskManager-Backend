@@ -55,12 +55,13 @@ namespace TaskManagerBackend.Controllers
         public async Task<IActionResult> UpdateTask([FromRoute] int id, [FromBody] UpdateTaskRequestDto updateTaskRequestDto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
-                return Unauthorized();
+            if (userId == null) return Unauthorized();
 
             var updatedTask = await taskService.UpdateTaskAsync(id, updateTaskRequestDto, userId);
-            if (updatedTask == null || updatedTask.Id == 0)
+            if (updatedTask == null)
                 return NotFound(new { Message = "Task not found." });
+            if (updatedTask.Id == 0)
+                return StatusCode(403, new { Message = "You are not authorized to update this comment." });
 
             return Ok(updatedTask);
         }
@@ -69,9 +70,15 @@ namespace TaskManagerBackend.Controllers
         [Authorize]
         public async Task<IActionResult> DeleteTask([FromRoute] int id)
         {
-            var result = await taskService.DeleteTaskAsync(id);
-            if (!result)
-                return NotFound(new { Message = "Task not found or already deleted." });
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized();
+
+            var result = await taskService.DeleteTaskAsync(id,userId);
+
+            if (result == null)
+                return NotFound(new { Message = "Task not found or you are not authorized." });
+            if(result == false)
+                return StatusCode(403, new { Message = "You are not authorized to update this comment." });
 
             return Ok(new { Message = "Task deleted successfully." });
         }

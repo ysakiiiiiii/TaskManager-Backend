@@ -36,7 +36,7 @@ namespace TaskManagerBackend.Controllers
         }
 
         [HttpPost("{taskId}")]
-        public async Task<IActionResult> CreateCommentAsync([FromRoute] int taskId, [FromBody] CreateCommentDto createCommentDto)
+        public async Task<IActionResult> CreateCommentAsync([FromRoute] int taskId, [FromBody] CreateCommentRequestDto createCommentDto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -61,6 +61,26 @@ namespace TaskManagerBackend.Controllers
             return CreatedAtAction("GetCommentsByTask", new { taskId = createdComment.TaskId }, createdComment);
         }
 
+        [HttpPut("{commentId}")]
+        public async Task<IActionResult> UpdateCommentAsync([FromRoute] int commentId, [FromBody] UpdateCommentRequestDto updateCommentDto)
+        {   
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if(userId == null)
+            {
+                return Unauthorized(new { message = "Account not authorized" });
+            }
+
+            var updatedComment = await commentService.UpdateCommentAsync(commentId, updateCommentDto, userId);
+
+            if (updatedComment == null)
+               return NotFound(new { Message = "Comment not found or unauthorized" });
+
+            if(updatedComment.Id == 0)
+                return StatusCode(403, new { Message = "You are not authorized to update this comment." });
+
+            return Ok(updatedComment);
+        }
+
         [HttpDelete("{commentId}")]
         public async Task<IActionResult> DeleteCommentAsync([FromRoute]int commentId)
         {
@@ -70,31 +90,13 @@ namespace TaskManagerBackend.Controllers
             {
                 return Unauthorized(new { message = "Account not authorized" });
             }
+            var result = await commentService.DeleteCommentAsync(commentId, userId);
 
-            var comment = await commentService.GetCommentByIdAsync(commentId);
-            if (comment == null)
-            {
+            if (result == null)
                 return NotFound(new { Message = "Comment not found." });
-            }
-
-            var task = await taskService.GetTaskByIdAsync(comment.TaskId);
-
-            if (task == null)
-            {
-                return NotFound(new { Message = "Task not found." });
-            }
-
-            if(task.CreatedById != userId && comment.UserId != userId)
-            {
-                return StatusCode(403, new { Message = "You are not authorized to delete this comment." });
-            }
-
-            var deleteComment = await commentService.DeleteCommentAsync(commentId);
-
-            if (!deleteComment)
-            {
-                return StatusCode(500, new { Message = "An error occurred while deleting the comment." });
-            }
+            
+            if(result == false)
+                return StatusCode(403, new { Message = "You are not authorized to update this comment." });
 
             return Ok("Successfully delete the comment");
 

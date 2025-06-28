@@ -16,7 +16,7 @@ namespace TaskManagerBackend.Services
             this.mapper = mapper;
         }
 
-        public async Task<CommentDto> CreateCommentAsync(int taskId, CreateCommentDto createCommentDto, string userId)
+        public async Task<CommentDto> CreateCommentAsync(int taskId, CreateCommentRequestDto createCommentDto, string userId)
         {
             var comments = new Comment
             {
@@ -42,11 +42,35 @@ namespace TaskManagerBackend.Services
             return mapper.Map<List<CommentDto>>(comments);
         }
 
-        public async Task<bool> DeleteCommentAsync(int commentId)
+        public async Task<CommentDto?> UpdateCommentAsync(int commentId, UpdateCommentRequestDto updateCommentDto, string userId)
         {
-            var result = await commentRepository.DeleteCommentAsync(commentId);
-            return result != null;
+            var comment = await commentRepository.GetCommentByIdAsync(commentId);
+            if (comment == null) return null;
+            if (comment.UserId != userId) return new CommentDto();
+
+            comment.Content = updateCommentDto.Content;
+            comment.DateUpdated = DateTime.UtcNow;
+
+            var result = await commentRepository.UpdateCommentAsync(comment);
+            if (result == null) return null;
+
+            return mapper.Map<CommentDto>(result);
         }
 
+
+        public async Task<bool?> DeleteCommentAsync(int commentId, string userId)
+        {
+            var comment = await commentRepository.GetCommentByIdAsync(commentId);
+
+            if (comment == null)
+                return null;
+            if (comment.UserId != userId)
+                return false;
+
+            return await commentRepository.DeleteCommentAsync(comment);
+        }
+
+
+        
     }
 }
