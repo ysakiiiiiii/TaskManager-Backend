@@ -10,6 +10,6 @@ namespace TaskManagerBackend.Repositories
         Task<List<TaskItem>> GetAllTasksAsync();
         Task<TaskItem> CreateTaskAsync(TaskItem task);
         Task<TaskItem?> UpdateTaskAsync(TaskItem task);
-        Task<TaskItem?> DeleteTaskAsync(int id);
+        Task<bool?> DeleteTaskAsync(TaskItem task);
     }
 }

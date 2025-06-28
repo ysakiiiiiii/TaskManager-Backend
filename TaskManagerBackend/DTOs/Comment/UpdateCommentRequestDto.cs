@@ -2,10 +2,10 @@
 
 namespace TaskManagerBackend.DTOs.Comment
 {
-    public class CreateCommentDto
+    public class UpdateCommentRequestDto
     {
-        [Required]
-        [MaxLength(2000)] 
+        [MinLength(5)]
+        [MaxLength(1000)]
         public string Content { get; set; }
     }
 }

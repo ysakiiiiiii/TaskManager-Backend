@@ -20,18 +20,6 @@ namespace TaskManagerBackend.Repositories
             return comment;
         }
 
-        public async Task<Comment> DeleteCommentAsync(int commentId)
-        {
-            var comment = await dbContext.Comments.FindAsync(commentId);
-            if (comment == null)
-            {
-                return null;
-            }
-            dbContext.Comments.Remove(comment);
-            await dbContext.SaveChangesAsync();
-            return comment;
-        }
-
         public async Task<Comment> GetCommentByIdAsync(int commentId)
         {
             var comment = await dbContext.Comments.FirstOrDefaultAsync(c => c.Id == commentId);
@@ -47,5 +35,21 @@ namespace TaskManagerBackend.Repositories
 
             return comments;
         }
+
+        public async Task<Comment> UpdateCommentAsync(Comment comment)
+        {
+            dbContext.Comments.Update(comment);
+            await dbContext.SaveChangesAsync();
+            return comment;
+        }
+
+        public async Task<bool> DeleteCommentAsync(Comment comment)
+        {
+            dbContext.Comments.Remove(comment);
+            await dbContext.SaveChangesAsync();
+            return true;
+        }
+
+
     }
 }

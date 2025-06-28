@@ -47,10 +47,11 @@ public class TaskService : ITaskService
         return mapper.Map<TaskDto>(createdTask);
     }
 
-    public async Task<TaskDto?> UpdateTaskAsync(int id, UpdateTaskRequestDto dto, string userId)
+    public async Task<TaskDto?> UpdateTaskAsync(int taskId, UpdateTaskRequestDto dto, string userId)
     {
-        var task = await taskRepository.GetTaskByIdAsync(id);
+        var task = await taskRepository.GetTaskByIdAsync(taskId);
         if (task == null) return null;
+        if (task.CreatedById != userId) return new TaskDto();
 
         task.Title = dto.Title ?? task.Title;
         task.Description = dto.Description ?? task.Description;
@@ -61,21 +62,25 @@ public class TaskService : ITaskService
 
         if (dto.AssignedUserIds != null)
         {
-            task.AssignedUsers = dto.AssignedUserIds.Select(uid => new TaskAssignment { UserId = uid, TaskId = id }).ToList();
+            task.AssignedUsers = dto.AssignedUserIds.Select(uid => new TaskAssignment { UserId = uid, TaskId = taskId }).ToList();
         }
 
         if (dto.ChecklistItems != null)
         {
-            task.CheckListItems = dto.ChecklistItems.Select(c => new CheckList { Description = c.Description, IsCompleted = c.IsCompleted ?? false, TaskId = id }).ToList();
+            task.CheckListItems = dto.ChecklistItems.Select(c => new CheckList { Description = c.Description, IsCompleted = c.IsCompleted ?? false, TaskId = taskId }).ToList();
         }
 
         var updatedTask = await taskRepository.UpdateTaskAsync(task);
         return mapper.Map<TaskDto>(updatedTask);
     }
 
-    public async Task<bool> DeleteTaskAsync(int id)
+    public async Task<bool?> DeleteTaskAsync(int taskId, string userId)
     {
-        var result = await taskRepository.DeleteTaskAsync(id);
-        return result != null;
+        var task = await taskRepository.GetTaskByIdAsync(taskId);
+
+        if (task == null) return null;
+        if(task.CreatedById != userId) return false;
+
+        return await taskRepository.DeleteTaskAsync(task);
     }
 }

@@ -40,12 +40,10 @@ public class TaskRepository : ITaskRepository
         return task;
     }
 
-    public async Task<TaskItem?> DeleteTaskAsync(int id)
+    public async Task<bool?> DeleteTaskAsync(TaskItem task)
     {
-        var task = await dbContext.Tasks.FindAsync(id);
-        if (task == null) return null;
         dbContext.Tasks.Remove(task);
         await dbContext.SaveChangesAsync();
-        return task;
+        return true;
     }
 }
