@@ -6,7 +6,5 @@ namespace TaskManagerBackend.DTOs.CheckList
     public class AddCheckListItemDto
     {
         public string Description { get; set; } = string.Empty;
-        public bool? IsCompleted { get; set; }
-
     }
 }

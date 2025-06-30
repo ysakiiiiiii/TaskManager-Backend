@@ -40,7 +40,6 @@ public class TaskService : ITaskService
             DateCreated = DateTime.UtcNow,
             AssignedUsers = dto.AssignedUsersId.Select(uid => new TaskAssignment { UserId = uid }).ToList(),
             CheckListItems = dto.ChecklistItems.Select(c => new CheckList { Description = c.Description, IsCompleted = false }).ToList(),
-            Attachments = dto.Attachments?.Select(a => new Attachment { FileName = a.FileName, FilePath = a.FilePath, UploadedById = userId }).ToList()
         };
 
         var createdTask = await taskRepository.CreateTaskAsync(taskItem);
@@ -67,8 +66,24 @@ public class TaskService : ITaskService
 
         if (dto.ChecklistItems != null)
         {
-            task.CheckListItems = dto.ChecklistItems.Select(c => new CheckList { Description = c.Description, IsCompleted = c.IsCompleted ?? false, TaskId = taskId }).ToList();
+            foreach (var item in dto.ChecklistItems)
+            {
+                bool alreadyExists = task.CheckListItems.Any(existing =>
+                    existing.Description.Trim().Equals(item.Description.Trim(), StringComparison.OrdinalIgnoreCase)
+                );
+
+                if (!alreadyExists)
+                {
+                    task.CheckListItems.Add(new CheckList
+                    {
+                        Description = item.Description,
+                        IsCompleted = false,
+                        TaskId = taskId
+                    });
+                }
+            }
         }
+
 
         var updatedTask = await taskRepository.UpdateTaskAsync(task);
         return mapper.Map<TaskDto>(updatedTask);
