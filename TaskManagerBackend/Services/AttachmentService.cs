@@ -15,25 +15,33 @@ namespace TaskManagerBackend.Services
             this.attachmentRepository = attachmentRepository;
             this.mapper = mapper;
         }
-        public Task DeleteAttachmentAsync(int id, string userId)
+        public async Task<List<AttachmentDto>> GetAttachmentsByTaskIdAsync(int taskId)
         {
-            throw new NotImplementedException();
+            var attachments = await attachmentRepository.GetByTaskIdAsync(taskId);
+            return attachments.Select(a => mapper.Map<AttachmentDto>(a)).ToList();
         }
 
-        public Task<AttachmentDto> GetAttachmentByIdAsync(int id)
+        public async Task<AttachmentDto> GetAttachmentByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            var attachment = await attachmentRepository.GetByIdAsync(id);
+            return attachment is null ? null : mapper.Map<AttachmentDto>(attachment);
         }
 
-        public Task<IEnumerable<AttachmentDto>> GetAttachmentsByTaskIdAsync(int taskId)
+        public async Task<string> GetFilePathAsync(int id)
         {
-            throw new NotImplementedException();
+            var attachment = await attachmentRepository.GetByIdAsync(id);
+            return attachment?.FilePath;
         }
 
-        public Task<string> GetFilePathAsync(int id)
+        public async Task DeleteAttachmentAsync(int id, string userId)
         {
-            throw new NotImplementedException();
+            var attachment = await attachmentRepository.GetByIdAsync(id);
+            if (attachment == null || attachment.UploadedById != userId)
+                throw new UnauthorizedAccessException("Attachment not found or access denied.");
+
+            await attachmentRepository.DeleteAsync(attachment);
         }
+
 
         public async Task<AttachmentDto> UploadAsync(UploadAttachmentRequestDto request, string userId, int taskId)
         {       
