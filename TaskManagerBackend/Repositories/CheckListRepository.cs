@@ -22,6 +22,16 @@ namespace TaskManagerBackend.Repositories
             return checkList;
         }
 
+        public async Task<bool?> DeleteCheckListAsync(CheckList checkList)
+        {
+            dbContext.ChecklistItems.Remove(checkList);
+            await dbContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<CheckList?> GetCheckListById(int checkListId) =>  await dbContext.ChecklistItems.FirstOrDefaultAsync(c => c.Id == checkListId);
+        
+
         public async Task<List<CheckList>> GetCheckListByTaskAsync(int taskId)
         {
             var checkList = await dbContext.ChecklistItems
@@ -29,6 +39,13 @@ namespace TaskManagerBackend.Repositories
                 .ToListAsync();
 
             
+            return checkList;
+        }
+
+        public async Task<CheckList> UpdateCheckListAsync(CheckList checkList)
+        {
+            dbContext.Update(checkList);
+            await dbContext.SaveChangesAsync();
             return checkList;
         }
     }

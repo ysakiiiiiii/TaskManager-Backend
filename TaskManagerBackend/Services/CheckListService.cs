@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Threading.Tasks;
+using AutoMapper;
 using TaskManagerBackend.DTOs.CheckList;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories;
@@ -30,7 +31,18 @@ namespace TaskManagerBackend.Services
             return mapper.Map<CheckListDto>(createdCheckListItem);
         }
 
-        public async Task<List<CheckListDto>> GetCheckListByTaskAsync(int taskId)
+        public async Task<bool?> DeleteCheckListAsync(int checkListId)
+        {
+            var checkListItem = await checkListRepository.GetCheckListById(checkListId);
+            if (checkListItem == null)
+            {
+                return null;
+            }
+
+            return await checkListRepository.DeleteCheckListAsync(checkListItem);
+        }
+
+        public async Task<List<CheckListDto?>> GetCheckListByTaskAsync(int taskId)
         {
             var checkList = await checkListRepository.GetCheckListByTaskAsync(taskId);
 
@@ -38,5 +50,19 @@ namespace TaskManagerBackend.Services
 
         }
 
+        public async Task<CheckListDto?> UpdateCheckListAsync(int checkListId, UpdateCheckListItemDto updateCheckListItemDto)
+        {
+            var existingCheckListItem = await checkListRepository.GetCheckListById(checkListId);
+
+            if (existingCheckListItem == null)
+            {
+                return null;
+            }
+
+            existingCheckListItem.Description = updateCheckListItemDto.Description;
+            var updatedCheckListItem = await checkListRepository.UpdateCheckListAsync(existingCheckListItem);
+
+            return mapper.Map<CheckListDto>(updatedCheckListItem);
+        }
     }
 }
