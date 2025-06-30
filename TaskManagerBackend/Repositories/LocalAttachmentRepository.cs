@@ -1,4 +1,5 @@
-﻿using TaskManagerBackend.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using TaskManagerBackend.Data;
 using TaskManagerBackend.DTOs.Attachment;
 using TaskManagerBackend.Models.Domain;
 
@@ -16,6 +17,37 @@ namespace TaskManagerBackend.Repositories
             this.httpContextAccessor = httpContextAccessor;
             this.dbContext = dbContext;
         }
+
+        public async Task<List<Attachment>> GetByTaskIdAsync(int taskId)
+        {
+            return await dbContext.Attachments
+                .Where(a => a.TaskId == taskId)
+                .ToListAsync();
+        }
+
+        public async Task<Attachment?> GetByIdAsync(int id)
+        {
+            return await dbContext.Attachments.FirstOrDefaultAsync(a => a.Id == id);
+        }
+
+        public async Task DeleteAsync(Attachment attachment)
+        {
+            var fileNameWithExtension = attachment.FileName + attachment.FileExtension;
+
+            var localFilePath = Path.Combine(
+                webHostEnvironment.ContentRootPath,
+                "UploadedAttachments",
+                fileNameWithExtension
+            );
+
+            // Remove physical file
+            if (File.Exists(localFilePath))
+                File.Delete(localFilePath);
+
+            dbContext.Attachments.Remove(attachment);
+            await dbContext.SaveChangesAsync();
+        }
+
         public async Task<Attachment> UploadAsync(Attachment attachment, int taskId)
         {
             var fileNameWithExtension = attachment.FileName + attachment.FileExtension;
@@ -40,5 +72,6 @@ namespace TaskManagerBackend.Repositories
             return attachment;
 
         }
+
     }
 }
