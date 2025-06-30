@@ -36,7 +36,32 @@ namespace TaskManagerBackend.Controllers
             return Ok("Checklistt Added Successfully!");
         }
 
+        [HttpPut("{checkListId}")]
+        public async Task<IActionResult>UpdateCheckList([FromRoute] int checkListId, [FromBody] UpdateCheckListItemDto updateCheckListItemDto)
+        {
+            var updatedCheckList = await checkListService.UpdateCheckListAsync(checkListId, updateCheckListItemDto);
+            if (updatedCheckList == null)
+            {
+                return NotFound(new { Message = "Checklist item not found or unauthorized" });
+            }
 
+            return Ok("Checklist Updated Successfully!");
+        }
 
+        [HttpDelete("{checkListId}")]
+        public async Task<IActionResult> DeleteCheckList([FromRoute] int checkListId)
+        {
+            var deletedCheckList = await checkListService.DeleteCheckListAsync(checkListId);
+            if (deletedCheckList == null)
+            {
+                return NotFound(new { Message = "Checklist item not found or unauthorized" });
+            }
+            if (!deletedCheckList.Value)
+            {
+                return BadRequest("Failed to delete checklist item.");
+            }
+
+            return Ok("Checklist Deleted Successfully!");
+        }
     }
 }
