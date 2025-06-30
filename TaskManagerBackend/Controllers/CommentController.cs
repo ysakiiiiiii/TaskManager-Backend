@@ -23,15 +23,6 @@ namespace TaskManagerBackend.Controllers
         public async Task<IActionResult> GetCommentsByTaskAsync([FromRoute] int taskId)
         {
             var comments = await commentService.GetCommentsByTaskAsync(taskId);
-
-            if (comments == null || !comments.Any())
-            {
-                return Ok(new
-                {
-                    Message = "No comments found for this task.",
-                    comments = new List<CommentDto>()
-                });
-            }
             return Ok(comments);
         }
 
