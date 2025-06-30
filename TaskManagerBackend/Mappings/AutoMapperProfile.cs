@@ -23,6 +23,8 @@ namespace TaskManagerBackend.Mappings
             CreateMap<Category, CategoryDto>().ReverseMap();
 
             CreateMap<Comment, CommentDto>().ReverseMap();
+
+            CreateMap<Attachment, AttachmentDto>().ReverseMap();
         }
     }
 

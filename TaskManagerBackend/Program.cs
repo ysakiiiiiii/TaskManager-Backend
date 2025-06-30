@@ -16,6 +16,7 @@ builder.Logging.AddConsole();
 
 // Controllers
 builder.Services.AddControllers();
+builder.Services.AddHttpContextAccessor();
 
 // Swagger + JWT Authorization
 builder.Services.AddEndpointsApiExplorer();
@@ -104,6 +105,9 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+
+builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+builder.Services.AddScoped<IAttachmentRepository, LocalAttachmentRepository>();
 
 
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();

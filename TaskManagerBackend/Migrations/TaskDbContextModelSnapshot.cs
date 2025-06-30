@@ -179,8 +179,16 @@ namespace TaskManagerBackend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("DateUploaded")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("FileExtension")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FileName")
                         .IsRequired()
@@ -189,6 +197,9 @@ namespace TaskManagerBackend.Migrations
                     b.Property<string>("FilePath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("FileSizeInBytes")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("TaskId")
                         .HasColumnType("int");
@@ -625,7 +636,7 @@ namespace TaskManagerBackend.Migrations
             modelBuilder.Entity("TaskManagerBackend.Models.Domain.TaskItem", b =>
                 {
                     b.HasOne("TaskManagerBackend.Models.Domain.Category", "Category")
-                        .WithMany("Tasks")
+                        .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -655,11 +666,6 @@ namespace TaskManagerBackend.Migrations
                     b.Navigation("Priority");
 
                     b.Navigation("Status");
-                });
-
-            modelBuilder.Entity("TaskManagerBackend.Models.Domain.Category", b =>
-                {
-                    b.Navigation("Tasks");
                 });
 
             modelBuilder.Entity("TaskManagerBackend.Models.Domain.TaskItem", b =>
