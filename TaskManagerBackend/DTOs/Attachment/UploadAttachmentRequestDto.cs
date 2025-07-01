@@ -4,11 +4,16 @@ using TaskManagerBackend.Models.Domain;
 
 namespace TaskManagerBackend.DTOs.Attachment
 {
-    public class UploadAttachmentRequestDto
+    /// <summary>
+    /// Represents a request DTO for uploading attachments
+    /// </summary>
+    public sealed record UploadAttachmentRequestDto
     {
-        [Required]
-        public IFormFile File { get; set; }
-        [Required]
-        public string FileName { get; set; }
+        [Required(ErrorMessage = "File is required")]
+        public IFormFile File { get; init; }
+
+        [Required(ErrorMessage = "File name is required")]
+        [StringLength(255, ErrorMessage = "File name cannot exceed 255 characters")]
+        public string FileName { get; init; }
     }
 }

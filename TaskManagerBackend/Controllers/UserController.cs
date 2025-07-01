@@ -104,9 +104,11 @@ namespace TaskManagerBackend.Controllers
                 }
 
                 var jwtToken = _tokenRepository.CreateJWTToken(user, roles.ToList());
+                var expiration = _tokenRepository.GetTokenExpiration(jwtToken);
                 var response = new LoginResponseDto
                 {
-                    JwtToken = jwtToken
+                    JwtToken = jwtToken,
+                    TokenExpiration = expiration
                 };
 
                 return Ok(ApiResponse.SuccessResponse(response));

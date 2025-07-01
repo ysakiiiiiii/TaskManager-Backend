@@ -41,5 +41,17 @@ namespace TaskManagerBackend.Repositories
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        public DateTime? GetTokenExpiration(string jwtToken)
+        {
+            var handler = new JwtSecurityTokenHandler();
+
+            if (!handler.CanReadToken(jwtToken))
+                return null;
+
+            var token = handler.ReadJwtToken(jwtToken);
+
+            return token.ValidTo;
+        }
+
     }
 }

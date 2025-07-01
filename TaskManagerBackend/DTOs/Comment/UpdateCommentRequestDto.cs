@@ -2,10 +2,15 @@
 
 namespace TaskManagerBackend.DTOs.Comment
 {
-    public class UpdateCommentRequestDto
+    /// <summary>
+    /// Request DTO for updating an existing comment
+    /// </summary>
+    public sealed record UpdateCommentRequestDto
     {
-        [MinLength(5)]
-        [MaxLength(1000)]
-        public string Content { get; set; }
+        [Required(ErrorMessage = "Comment content is required")]
+        [MinLength(5, ErrorMessage = "Comment must be at least 5 characters")]
+        [MaxLength(2000, ErrorMessage = "Comment cannot exceed 2000 characters")]
+        [DataType(DataType.MultilineText)]
+        public string Content { get; init; } = string.Empty;
     }
 }

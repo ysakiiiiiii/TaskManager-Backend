@@ -3,9 +3,14 @@ using System.Runtime.CompilerServices;
 
 namespace TaskManagerBackend.DTOs.CheckList
 {
-    public class AddCheckListItemDto
+    /// <summary>
+    /// Request DTO for adding a new checklist item
+    /// </summary>
+    public sealed record AddCheckListItemDto
     {
-        [Required]
-        public string Description { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Description is required")]
+        [StringLength(500, MinimumLength = 3, ErrorMessage = "Description must be between 3 and 500 characters")]
+        [DataType(DataType.MultilineText)]
+        public string Description { get; init; } = string.Empty;
     }
 }

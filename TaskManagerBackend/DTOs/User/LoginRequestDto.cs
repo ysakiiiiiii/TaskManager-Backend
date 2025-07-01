@@ -2,15 +2,20 @@
 
 namespace TaskManagerBackend.DTOs.User
 {
-    public class LoginRequestDto
+    /// <summary>
+    /// Request DTO for user login
+    /// </summary>
+    public sealed record LoginRequestDto
     {
-
-        [Required]
+        [Required(ErrorMessage = "Email address is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address format")]
         [DataType(DataType.EmailAddress)]
-        public string Username { get; set; }
+        public string Username { get; init; }
 
-        [Required]
+        [Required(ErrorMessage = "Password is required")]
         [DataType(DataType.Password)]
-        public string Password { get; set; }
+        [MinLength(8, ErrorMessage = "Password must be at least 8 characters")]
+        public string Password { get; init; }
     }
+
 }

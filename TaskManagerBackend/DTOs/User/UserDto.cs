@@ -1,13 +1,22 @@
-﻿namespace TaskManagerBackend.DTOs.User
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace TaskManagerBackend.DTOs.User
 {
-    public class UserDto
+    /// <summary>
+    /// User data transfer object
+    /// </summary>
+    public sealed record UserDto
     {
-        public string Id { get; set; }        
-        public string FirstName { get; set; } 
-        public string LastName { get; set; }
+        public string Id { get; init; }
+        public string FirstName { get; init; }
+        public string LastName { get; init; }
         public string FullName => $"{FirstName} {LastName}";
-        public string Email { get; set; }
-        public DateTime UserCreated { get; set; }
-        public DateTime? UserModified { get; set; }
+
+        [EmailAddress]
+        public string Email { get; init; }
+
+        public DateTime UserCreated { get; init; }
+        public DateTime? UserModified { get; init; }
+
     }
 }

@@ -1,7 +1,11 @@
 ﻿namespace TaskManagerBackend.DTOs.User
 {
-    public class LoginResponseDto
+    /// <summary>
+    /// Response DTO containing authentication token
+    /// </summary>
+    public sealed record LoginResponseDto
     {
-        public string JwtToken { get; set; }
+        public string JwtToken { get; init; }
+        public DateTime? TokenExpiration { get; init; }
     }
 }
