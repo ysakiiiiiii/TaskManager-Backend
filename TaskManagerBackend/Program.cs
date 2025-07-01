@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using TaskManagerBackend.Data;
 using TaskManagerBackend.Mappings;
+using TaskManagerBackend.Middlewares;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories;
 using TaskManagerBackend.Services;
@@ -128,6 +129,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<InputSanitizationMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
