@@ -1,9 +1,18 @@
-﻿namespace TaskManagerBackend.DTOs.CheckList
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace TaskManagerBackend.DTOs.CheckList
 {
-    public class CheckListDto
+    /// <summary>
+    /// Response DTO for checklist item data
+    /// </summary>
+    public sealed record CheckListDto
     {
-        public int Id { get; set; }
-        public string Description { get; set; }
-        public bool IsCompleted { get; set; }
+        public int Id { get; init; }
+
+        [Required]
+        [StringLength(500)]
+        public string Description { get; init; } = string.Empty;
+
+        public bool IsCompleted { get; init; }
     }
 }

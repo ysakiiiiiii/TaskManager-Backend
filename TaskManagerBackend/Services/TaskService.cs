@@ -38,7 +38,7 @@ public class TaskService : ITaskService
             DueDate = dto.DueDate,
             CreatedById = userId,
             DateCreated = DateTime.UtcNow,
-            AssignedUsers = dto.AssignedUsersId.Select(uid => new TaskAssignment { UserId = uid }).ToList(),
+            AssignedUsers = dto.AssignedUserIds.Select(uid => new TaskAssignment { UserId = uid }).ToList(),
             CheckListItems = dto.ChecklistItems.Select(c => new CheckList { Description = c.Description, IsCompleted = false }).ToList(),
         };
 

@@ -1,13 +1,15 @@
 ﻿namespace TaskManagerBackend.DTOs.Attachment
 {
-    public class AttachmentDto
+    /// <summary>
+    /// Represents an attachment response DTO
+    /// </summary>
+    public sealed record AttachmentDto
     {
-        public int Id { get; set; }
-        public IFormFile File { get; set; }
-        public string FileName { get; set; }
-        public string FileExtension { get; set; }
-        public string FilePath { get; set; }
-        public DateTime DateUploaded { get; set; }
-        public string UploadedById { get; set; }
+        public int Id { get; init; }
+        public string FileName { get; init; }
+        public string FileExtension { get; init; }
+        public string FilePath { get; init; }
+        public DateTime DateUploaded { get; init; }
+        public string UploadedById { get; init; }
     }
 }
