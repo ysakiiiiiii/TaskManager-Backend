@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagerBackend.DTOs.User;
+using TaskManagerBackend.Helpers;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories;
 
@@ -11,82 +12,110 @@ namespace TaskManagerBackend.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly UserManager<User> userManager;
-        private readonly ITokenRepository tokenRepository;
+        private readonly UserManager<User> _userManager;
+        private readonly ITokenRepository _tokenRepository;
+        private readonly ILogger<UserController> _logger;
 
-        public UserController(UserManager<User> userManager, ITokenRepository tokenRepository)
+        public UserController(
+            UserManager<User> userManager,
+            ITokenRepository tokenRepository,
+            ILogger<UserController> logger)
         {
-            this.userManager = userManager;
-            this.tokenRepository = tokenRepository;
+            _userManager = userManager;
+            _tokenRepository = tokenRepository;
+            _logger = logger;
         }
 
-        [HttpPost]
-        [Route("Register")]
+        [HttpPost("Register")]
         public async Task<IActionResult> Register(RegisterRequestDto registerRequestDto)
         {
-            var user = new User
+            try
             {
-                UserName = registerRequestDto.Username,
-                Email = registerRequestDto.Username,
-                FirstName = registerRequestDto.FirstName,
-                LastName = registerRequestDto.LastName,
-            };
-
-            var identityResult = await userManager.CreateAsync(user, registerRequestDto.Password);
-
-            if (!identityResult.Succeeded)
-            {
-                return BadRequest(new
+                if (!ModelState.IsValid)
                 {
-                    Errors = identityResult.Errors.Select(e => e.Description)
-                });
-            }
+                    return BadRequest(ApiResponse.ErrorResponse("Invalid data", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)));
+                }
 
-            var roleResult = await userManager.AddToRoleAsync(user, "Admin");
-
-            if (!roleResult.Succeeded)
-            {
-                return BadRequest(new
+                var user = new User
                 {
-                    Errors = roleResult.Errors.Select(e => e.Description)
-                });
-            }
+                    UserName = registerRequestDto.Username,
+                    Email = registerRequestDto.Username,
+                    FirstName = registerRequestDto.FirstName,
+                    LastName = registerRequestDto.LastName,
+                };
 
-            return Ok("Registered Successfully. Please Login");
+                var identityResult = await _userManager.CreateAsync(user, registerRequestDto.Password);
+
+                if (!identityResult.Succeeded)
+                {
+                    return BadRequest(ApiResponse.ErrorResponse("Registration failed",
+                        identityResult.Errors.Select(e => e.Description)));
+                }
+
+                var roleResult = await _userManager.AddToRoleAsync(user, "User");
+
+                if (!roleResult.Succeeded)
+                {
+                    await _userManager.DeleteAsync(user);
+                    return BadRequest(ApiResponse.ErrorResponse("Role assignment failed",
+                        roleResult.Errors.Select(e => e.Description)));
+                }
+
+                return Ok(ApiResponse.SuccessResponse(null, "Registered successfully. Please login."));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during registration");
+                return StatusCode(500, ApiResponse.ErrorResponse("An error occurred during registration"));
+            }
         }
 
-
-        [HttpPost]
-        [Route("Login")]
+        [HttpPost("Login")]
         public async Task<IActionResult> Login(LoginRequestDto loginRequestDto)
         {
-            var user = await userManager.FindByEmailAsync(loginRequestDto.Username);
-            if (user != null)
+            try
             {
-                var isPasswordValid = await userManager.CheckPasswordAsync(user, loginRequestDto.Password);
-                if (isPasswordValid)
+                if (!ModelState.IsValid)
                 {
-                    var roles = await userManager.GetRolesAsync(user);
-                    
-                    if (roles != null)
-                    {
-                        var jwtToken = tokenRepository.CreateJWTToken(user, roles.ToList());
-                        var response = new LoginResponseDto
-                        {
-                            JwtToken = jwtToken
-                        };
-
-                         return Ok(response);
-                    }
-
+                    return BadRequest(ApiResponse.ErrorResponse("Invalid data", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)));
                 }
-                else
+
+                var user = await _userManager.FindByEmailAsync(loginRequestDto.Username);
+                if (user == null)
                 {
-                    return Unauthorized("Invalid Password");
+                    return NotFound(ApiResponse.ErrorResponse("Invalid username or password"));
                 }
+
+                var isPasswordValid = await _userManager.CheckPasswordAsync(user, loginRequestDto.Password);
+                if (!isPasswordValid)
+                {
+                    return Unauthorized(ApiResponse.ErrorResponse("Invalid username or password"));
+                }
+
+                var roles = await _userManager.GetRolesAsync(user);
+
+                if (roles == null || !roles.Any())
+                {
+                    return StatusCode(500, ApiResponse.ErrorResponse("User has no roles assigned"));
+                }
+
+                var jwtToken = _tokenRepository.CreateJWTToken(user, roles.ToList());
+                var response = new LoginResponseDto
+                {
+                    JwtToken = jwtToken
+                };
+
+                return Ok(ApiResponse.SuccessResponse(response));
             }
-
-           return NotFound("User not found");
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during login");
+                return StatusCode(500, ApiResponse.ErrorResponse("An error occurred during login"));
+            }
         }
     }
 }
