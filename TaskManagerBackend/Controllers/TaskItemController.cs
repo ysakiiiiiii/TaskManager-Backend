@@ -2,85 +2,163 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using TaskManagerBackend.DTOs.Task;
+using TaskManagerBackend.Helpers;
 
 namespace TaskManagerBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class TaskItemController : ControllerBase
     {
-        private readonly ITaskService taskService;
+        private readonly ITaskService _taskService;
+        private readonly ILogger<TaskItemController> _logger;
 
-        public TaskItemController(ITaskService taskService)
+        public TaskItemController(ITaskService taskService, ILogger<TaskItemController> logger)
         {
-            this.taskService = taskService;
+            _taskService = taskService;
+            _logger = logger;
         }
 
         [HttpGet]
-        [Authorize]
         public async Task<IActionResult> GetAllTasks()
         {
-            var tasks = await taskService.GetAllTasksAsync();
-            if (tasks == null || !tasks.Any())
-                return NotFound(new { Message = "No tasks found." });
+            try
+            {
+                var tasks = await _taskService.GetAllTasksAsync();
+                if (tasks == null || !tasks.Any())
+                {
+                    return NotFound(ApiResponse.ErrorResponse("No tasks found"));
+                }
 
-            return Ok(tasks);
+                return Ok(ApiResponse.SuccessResponse(tasks));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all tasks");
+                return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while retrieving tasks"));
+            }
         }
 
         [HttpGet("{id}")]
-        [Authorize]
         public async Task<IActionResult> GetTaskById(int id)
         {
-            var task = await taskService.GetTaskByIdAsync(id);
-            if (task == null)
-                return NotFound(new { Message = "Task not found." });
+            try
+            {
+                var task = await _taskService.GetTaskByIdAsync(id);
+                if (task == null)
+                {
+                    return NotFound(ApiResponse.ErrorResponse("Task not found"));
+                }
 
-            return Ok(task);
+                return Ok(ApiResponse.SuccessResponse(task));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting task with ID {id}");
+                return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while retrieving the task"));
+            }
         }
 
         [HttpPost]
-        [Authorize]
         public async Task<IActionResult> CreateTask([FromBody] AddTaskRequestDto dto)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
-                return Unauthorized();
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse.ErrorResponse("Invalid data", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)));
+                }
 
-            var createdTask = await taskService.CreateTaskAsync(dto, userId);
-            return CreatedAtAction(nameof(GetTaskById), new { id = createdTask.Id }, createdTask);
+                var userId = this.GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(ApiResponse.ErrorResponse("User not authenticated"));
+                }
+
+                var createdTask = await _taskService.CreateTaskAsync(dto, userId);
+                return CreatedAtAction(nameof(GetTaskById),
+                    new { id = createdTask.Id },
+                    ApiResponse.SuccessResponse(createdTask, "Task created successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating task");
+                return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while creating the task"));
+            }
         }
 
         [HttpPut("{id}")]
-        [Authorize]
-        public async Task<IActionResult> UpdateTask([FromRoute] int id, [FromBody] UpdateTaskRequestDto updateTaskRequestDto)
+        public async Task<IActionResult> UpdateTask([FromRoute] int id, [FromBody] UpdateTaskRequestDto dto)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null) return Unauthorized();
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse.ErrorResponse("Invalid data", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)));
+                }
 
-            var updatedTask = await taskService.UpdateTaskAsync(id, updateTaskRequestDto, userId);
-            if (updatedTask == null)
-                return NotFound(new { Message = "Task not found." });
-            if (updatedTask.Id == 0)
-                return StatusCode(403, new { Message = "You are not authorized to update this comment." });
+                var userId = this.GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(ApiResponse.ErrorResponse("User not authenticated"));
+                }
 
-            return Ok(updatedTask);
+                var updatedTask = await _taskService.UpdateTaskAsync(id, dto, userId);
+
+                if (updatedTask == null)
+                {
+                    return NotFound(ApiResponse.ErrorResponse("Task not found"));
+                }
+
+                if (updatedTask.Id == 0)
+                {
+                    return StatusCode(403, ApiResponse.ErrorResponse("You are not authorized to update this task"));
+                }
+
+                return Ok(ApiResponse.SuccessResponse(updatedTask, "Task updated successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating task with ID {id}");
+                return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while updating the task"));
+            }
         }
 
         [HttpDelete("{id}")]
-        [Authorize]
         public async Task<IActionResult> DeleteTask([FromRoute] int id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null) return Unauthorized();
+            try
+            {
+                var userId = this.GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(ApiResponse.ErrorResponse("User not authenticated"));
+                }
 
-            var result = await taskService.DeleteTaskAsync(id,userId);
+                var result = await _taskService.DeleteTaskAsync(id, userId);
 
-            if (result == null)
-                return NotFound(new { Message = "Task not found or you are not authorized." });
-            if(result == false)
-                return StatusCode(403, new { Message = "You are not authorized to update this comment." });
+                if (result == null)
+                {
+                    return NotFound(ApiResponse.ErrorResponse("Task not found"));
+                }
 
-            return Ok(new { Message = "Task deleted successfully." });
+                if (result == false)
+                {
+                    return StatusCode(403, ApiResponse.ErrorResponse("You are not authorized to delete this task"));
+                }
+
+                return Ok(ApiResponse.SuccessResponse(null, "Task deleted successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error deleting task with ID {id}");
+                return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while deleting the task"));
+            }
         }
     }
 }

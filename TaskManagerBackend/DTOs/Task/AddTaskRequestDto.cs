@@ -1,35 +1,34 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using TaskManagerBackend.DTOs.Attachment;
-using TaskManagerBackend.DTOs.Category;
 using TaskManagerBackend.DTOs.CheckList;
-using TaskManagerBackend.DTOs.Comment;
-using TaskManagerBackend.DTOs.TaskAssignment;
-using TaskManagerBackend.DTOs.User;
+using TaskManagerBackend.Helpers;
 
 namespace TaskManagerBackend.DTOs.Task
 {
     public class AddTaskRequestDto
     {
+        [Required(ErrorMessage = "Title is required")]
+        [StringLength(100, ErrorMessage = "Title cannot exceed 100 characters")]
+        public string Title { get; set; } = string.Empty;
 
-            [Required]
-            [MaxLength(100)]
-            public string Title { get; set; }
+        [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
+        public string Description { get; set; } = string.Empty;
 
-            [MaxLength(1000)]
-            public string Description { get; set; }
+        [Required(ErrorMessage = "Category is required")]
+        [Range(1, int.MaxValue, ErrorMessage = "Invalid Category ID")]
+        public int CategoryId { get; set; }
 
-            [Required]
-            public int CategoryId { get; set; }
+        [Required(ErrorMessage = "Priority is required")]
+        [Range(1, int.MaxValue, ErrorMessage = "Invalid Priority ID")]
+        public int PriorityId { get; set; }
 
-            [Required]
-            public int PriorityId { get; set; }
-            
-            [Required]
-            public int StatusId { get; set; }
+        [Required(ErrorMessage = "Status is required")]
+        [Range(1, int.MaxValue, ErrorMessage = "Invalid Status ID")]
+        public int StatusId { get; set; }
 
-            public DateTime? DueDate { get; set; } = null;
-            public List<string> AssignedUsersId { get; set; } = new();
-            public List<AddCheckListItemDto> ChecklistItems { get; set; } = new();
+        [FutureDate(ErrorMessage = "Due date must be in the future")]
+        public DateTime? DueDate { get; set; }
 
+        public ICollection<string> AssignedUserIds { get; set; } = new List<string>();
+        public ICollection<AddCheckListItemDto> ChecklistItems { get; set; } = new List<AddCheckListItemDto>();
     }
 }

@@ -1,134 +1,176 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using TaskManagerBackend.DTOs.Attachment;
-using TaskManagerBackend.Services;
 using TaskManagerBackend.Helpers;
-using Microsoft.AspNetCore.Hosting;
 using TaskManagerBackend.Repositories;
+using TaskManagerBackend.Services;
 
-namespace TaskManagerBackend.Controllers
+[Route("api/[controller]")]
+[ApiController]
+[Authorize]
+public class AttachmentController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AttachmentController : ControllerBase
+    private readonly IAttachmentService _attachmentService;
+    private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly ITaskRepository _taskRepository;
+    private readonly ILogger<AttachmentController> _logger;
+
+    public AttachmentController(
+        IAttachmentService attachmentService,
+        IWebHostEnvironment webHostEnvironment,
+        ITaskRepository taskRepository,
+        ILogger<AttachmentController> logger)
     {
-        private readonly IAttachmentService attachmentService;
-        private readonly IWebHostEnvironment webHostEnvironment;
-        private readonly ITaskRepository taskRepository;
+        _attachmentService = attachmentService;
+        _webHostEnvironment = webHostEnvironment;
+        _taskRepository = taskRepository;
+        _logger = logger;
+    }
 
-        public AttachmentController(IAttachmentService attachmentService, IWebHostEnvironment webHostEnvironment, ITaskRepository taskRepository)
+    [HttpGet("{taskId}")]
+    public async Task<IActionResult> GetAllByTaskId([FromRoute] int taskId)
+    {
+        try
         {
-            this.attachmentService = attachmentService;
-            this.webHostEnvironment = webHostEnvironment;
-            this.taskRepository = taskRepository;
+            var attachments = await _attachmentService.GetAttachmentsByTaskIdAsync(taskId);
+            return Ok(ApiResponse.SuccessResponse(attachments));
         }
-
-
-        [HttpGet("{taskId}")]
-        public async Task<IActionResult> GetAllByTaskId([FromRoute] int taskId)
+        catch (Exception ex)
         {
-            var attachments = await attachmentService.GetAttachmentsByTaskIdAsync(taskId);
-            return Ok(attachments);
+            _logger.LogError(ex, $"Error getting attachments for task ID {taskId}");
+            return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while retrieving attachments"));
         }
+    }
 
-
-        [HttpGet("download/{attachmentId}")]
-        public async Task<IActionResult> Download([FromRoute] int attachmentId)
+    [HttpGet("download/{attachmentId}")]
+    public async Task<IActionResult> Download([FromRoute] int attachmentId)
+    {
+        try
         {
-            var attachment = await attachmentService.GetAttachmentByIdAsync(attachmentId);
+            var attachment = await _attachmentService.GetAttachmentByIdAsync(attachmentId);
             if (attachment == null)
-                return NotFound();
+            {
+                return NotFound(ApiResponse.ErrorResponse("Attachment not found"));
+            }
+
             var filePath = Path.Combine(
-                webHostEnvironment.ContentRootPath,
+                _webHostEnvironment.ContentRootPath,
                 "UploadedAttachments",
                 attachment.FileName + attachment.FileExtension
             );
 
             if (!System.IO.File.Exists(filePath))
-                return NotFound(new { message = "File not found on disk." });
+            {
+                return NotFound(ApiResponse.ErrorResponse("File not found on disk"));
+            }
 
             var contentType = FileHelper.GetContentType(attachment.FileName + attachment.FileExtension);
             var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
 
             return File(fileBytes, contentType, attachment.FileName + attachment.FileExtension);
         }
-
-
-        //POST api/attachment/upload
-        [HttpPost("{taskId}/Upload")]
-        public async Task<IActionResult> Upload([FromRoute] int taskId, [FromForm] UploadAttachmentRequestDto request)
+        catch (Exception ex)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
-                return Unauthorized(new { message = "You're not authorized." });
+            _logger.LogError(ex, $"Error downloading attachment with ID {attachmentId}");
+            return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while downloading the file"));
+        }
+    }
 
+    [HttpPost("{taskId}/Upload")]
+    public async Task<IActionResult> Upload([FromRoute] int taskId, [FromForm] UploadAttachmentRequestDto request)
+    {
+        try
+        {
+            var userId = this.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(ApiResponse.ErrorResponse("User not authenticated"));
+            }
 
-            var task = await taskRepository.GetTaskByIdAsync(taskId);
+            var task = await _taskRepository.GetTaskByIdAsync(taskId);
             if (task == null)
-                return NotFound(new { message = "Task not found." });
+            {
+                return NotFound(ApiResponse.ErrorResponse("Task not found"));
+            }
 
-            // Validate before calling the service
             var validationResult = await ValidateFileUploadAsync(request);
             if (!validationResult)
-                return BadRequest(ModelState);
+            {
+                return BadRequest(ApiResponse.ErrorResponse("Invalid file upload", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)));
+            }
 
-            var uploadedFile = await attachmentService.UploadAsync(request, userId, taskId);
-            return Ok(uploadedFile);
+            var uploadedFile = await _attachmentService.UploadAsync(request, userId, taskId);
+            return Ok(ApiResponse.SuccessResponse(uploadedFile, "File uploaded successfully"));
         }
-
-        [HttpDelete("{attachmentId}")]
-        public async Task<IActionResult> Delete([FromRoute] int attachmentId)
+        catch (Exception ex)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            try
-            {
-                await attachmentService.DeleteAttachmentAsync(attachmentId, userId);
-                return Ok(new { message = "Attachment deleted." });
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Forbid();
-            }
-            catch
-            {
-                return NotFound();
-            }
+            _logger.LogError(ex, $"Error uploading attachment for task ID {taskId}");
+            return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while uploading the file"));
         }
+    }
 
-        private async Task<bool> ValidateFileUploadAsync(UploadAttachmentRequestDto request)
+    [HttpDelete("{attachmentId}")]
+    public async Task<IActionResult> Delete([FromRoute] int attachmentId)
+    {
+        try
         {
-            if (request == null || request.File == null)
+            var userId = this.GetUserId();
+            if (string.IsNullOrEmpty(userId))
             {
-                ModelState.AddModelError("File", "File is required.");
-                return false;
+                return Unauthorized(ApiResponse.ErrorResponse("User not authenticated"));
             }
 
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf", ".docx", ".xlsx", ".pptx" };
-            var extension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
+            await _attachmentService.DeleteAttachmentAsync(attachmentId, userId);
+            return Ok(ApiResponse.SuccessResponse(null, "Attachment deleted successfully"));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(403, ApiResponse.ErrorResponse("You are not authorized to delete this attachment"));
+        }
+        catch (FileNotFoundException)
+        {
+            return NotFound(ApiResponse.ErrorResponse("Attachment not found"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deleting attachment with ID {attachmentId}");
+            return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while deleting the attachment"));
+        }
+    }
 
-            if (!allowedExtensions.Contains(extension))
-            {
-                ModelState.AddModelError("File", $"Extension '{extension}' is not allowed.");
-                return false;
-            }
-
-            if (request.File.Length > 10 * 1024 * 1024)
-            {
-                ModelState.AddModelError("File", "File size exceeds 10 MB.");
-                return false;
-            }
-
-            var isValidContent = await FileValidator.IsValidFileAsync(request.File, extension);
-            if (!isValidContent)
-            {
-                ModelState.AddModelError("File", $"The file content does not match the extension '{extension}'.");
-                return false;
-            }
-
-            return true;
+    private async Task<bool> ValidateFileUploadAsync(UploadAttachmentRequestDto request)
+    {
+        if (request == null || request.File == null)
+        {
+            ModelState.AddModelError("File", "File is required.");
+            return false;
         }
 
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf", ".docx", ".xlsx", ".pptx" };
+        var extension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
+
+        if (!allowedExtensions.Contains(extension))
+        {
+            ModelState.AddModelError("File", $"Extension '{extension}' is not allowed.");
+            return false;
+        }
+
+        if (request.File.Length > 10 * 1024 * 1024)
+        {
+            ModelState.AddModelError("File", "File size exceeds 10 MB.");
+            return false;
+        }
+
+        var isValidContent = await FileValidator.IsValidFileAsync(request.File, extension);
+        if (!isValidContent)
+        {
+            ModelState.AddModelError("File", $"The file content does not match the extension '{extension}'.");
+            return false;
+        }
+
+        return true;
     }
 }

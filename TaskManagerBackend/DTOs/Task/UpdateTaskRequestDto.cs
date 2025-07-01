@@ -1,20 +1,30 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using TaskManagerBackend.DTOs.CheckList;
+using TaskManagerBackend.Helpers;
 
 namespace TaskManagerBackend.DTOs.Task
 {
     public class UpdateTaskRequestDto
     {
-        [MaxLength(100)]
+        [StringLength(100, ErrorMessage = "Title cannot exceed 100 characters")]
         public string? Title { get; set; }
-        [MaxLength(1000)]
+
+        [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
         public string? Description { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "Invalid Category ID")]
         public int? CategoryId { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "Invalid Priority ID")]
         public int? PriorityId { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "Invalid Status ID")]
         public int? StatusId { get; set; }
+
+        [FutureDate(ErrorMessage = "Due date must be in the future")]
         public DateTime? DueDate { get; set; }
-        public List<AddCheckListItemDto>? ChecklistItems { get; set; }
-        public List<string>? AssignedUserIds { get; set; }
+
+        public ICollection<AddCheckListItemDto>? ChecklistItems { get; set; }
+        public ICollection<string>? AssignedUserIds { get; set; }
     }
 }
-

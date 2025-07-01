@@ -1,96 +1,144 @@
 ﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagerBackend.DTOs.Comment;
+using TaskManagerBackend.Helpers;
 using TaskManagerBackend.Services;
 
 namespace TaskManagerBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CommentController : ControllerBase
     {
-        private readonly ICommentService commentService;
-        private readonly ITaskService taskService;
+        private readonly ICommentService _commentService;
+        private readonly ILogger<CommentController> _logger;
 
-        public CommentController(ICommentService commentService, ITaskService taskService)
+        public CommentController(ICommentService commentService, ILogger<CommentController> logger)
         {
-            this.commentService = commentService;
-            this.taskService = taskService;
+            _commentService = commentService;
+            _logger = logger;
         }
 
         [HttpGet("{taskId}", Name = "GetCommentsByTask")]
         public async Task<IActionResult> GetCommentsByTaskAsync([FromRoute] int taskId)
         {
-            var comments = await commentService.GetCommentsByTaskAsync(taskId);
-            return Ok(comments);
+            try
+            {
+                var comments = await _commentService.GetCommentsByTaskAsync(taskId);
+                return Ok(ApiResponse.SuccessResponse(comments));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting comments for task ID {taskId}");
+                return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while retrieving comments"));
+            }
         }
 
         [HttpPost("{taskId}")]
-        public async Task<IActionResult> CreateCommentAsync([FromRoute] int taskId, [FromBody] CreateCommentRequestDto createCommentDto)
+        public async Task<IActionResult> CreateCommentAsync([FromRoute] int taskId, [FromBody] CreateCommentRequestDto dto)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (userId == null)
+            try
             {
-                return Unauthorized(new { Message = "User not authenticated." });
-            }
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse.ErrorResponse("Invalid data", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)));
+                }
 
-            if (createCommentDto == null || string.IsNullOrWhiteSpace(createCommentDto.Content))
+                var userId = this.GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(ApiResponse.ErrorResponse("User not authenticated"));
+                }
+
+                if (string.IsNullOrWhiteSpace(dto.Content))
+                {
+                    return BadRequest(ApiResponse.ErrorResponse("Comment content cannot be empty"));
+                }
+
+                var createdComment = await _commentService.CreateCommentAsync(taskId, dto, userId);
+
+                if (createdComment == null)
+                {
+                    return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while creating the comment"));
+                }
+
+                return CreatedAtAction("GetCommentsByTask",
+                    new { taskId = createdComment.TaskId },
+                    ApiResponse.SuccessResponse(createdComment, "Comment created successfully"));
+            }
+            catch (Exception ex)
             {
-                return BadRequest(new { Message = "Invalid comment data." });
+                _logger.LogError(ex, $"Error creating comment for task ID {taskId}");
+                return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while creating the comment"));
             }
-
-            var createdComment = await commentService.CreateCommentAsync(taskId, createCommentDto, userId);
-
-            if (createdComment == null)
-            {
-                return StatusCode(500, new { Message = "An error occurred while creating the comment." });
-            }
-
-
-            return CreatedAtAction("GetCommentsByTask", new { taskId = createdComment.TaskId }, createdComment);
         }
 
         [HttpPut("{commentId}")]
-        public async Task<IActionResult> UpdateCommentAsync([FromRoute] int commentId, [FromBody] UpdateCommentRequestDto updateCommentDto)
-        {   
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if(userId == null)
+        public async Task<IActionResult> UpdateCommentAsync([FromRoute] int commentId, [FromBody] UpdateCommentRequestDto dto)
+        {
+            try
             {
-                return Unauthorized(new { message = "Account not authorized" });
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse.ErrorResponse("Invalid data", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)));
+                }
+
+                var userId = this.GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(ApiResponse.ErrorResponse("User not authenticated"));
+                }
+
+                var updatedComment = await _commentService.UpdateCommentAsync(commentId, dto, userId);
+
+                if (updatedComment == null)
+                    return NotFound(ApiResponse.ErrorResponse("Comment not found"));
+
+                if (updatedComment.Id == 0)
+                    return StatusCode(403, ApiResponse.ErrorResponse("You are not authorized to update this comment"));
+
+                return Ok(ApiResponse.SuccessResponse(updatedComment, "Comment updated successfully"));
             }
-
-            var updatedComment = await commentService.UpdateCommentAsync(commentId, updateCommentDto, userId);
-
-            if (updatedComment == null)
-               return NotFound(new { Message = "Comment not found or unauthorized" });
-
-            if(updatedComment.Id == 0)
-                return StatusCode(403, new { Message = "You are not authorized to update this comment." });
-
-            return Ok(updatedComment);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating comment with ID {commentId}");
+                return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while updating the comment"));
+            }
         }
 
         [HttpDelete("{commentId}")]
-        public async Task<IActionResult> DeleteCommentAsync([FromRoute]int commentId)
+        public async Task<IActionResult> DeleteCommentAsync([FromRoute] int commentId)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if(userId == null)
+            try
             {
-                return Unauthorized(new { message = "Account not authorized" });
+                var userId = this.GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(ApiResponse.ErrorResponse("User not authenticated"));
+                }
+
+                var result = await _commentService.DeleteCommentAsync(commentId, userId);
+
+                if (result == null)
+                    return NotFound(ApiResponse.ErrorResponse("Comment not found"));
+
+                if (result == false)
+                    return StatusCode(403, ApiResponse.ErrorResponse("You are not authorized to delete this comment"));
+
+                return Ok(ApiResponse.SuccessResponse(null, "Comment deleted successfully"));
             }
-            var result = await commentService.DeleteCommentAsync(commentId, userId);
-
-            if (result == null)
-                return NotFound(new { Message = "Comment not found." });
-            
-            if(result == false)
-                return StatusCode(403, new { Message = "You are not authorized to update this comment." });
-
-            return Ok("Successfully delete the comment");
-
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error deleting comment with ID {commentId}");
+                return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while deleting the comment"));
+            }
         }
     }
 }
