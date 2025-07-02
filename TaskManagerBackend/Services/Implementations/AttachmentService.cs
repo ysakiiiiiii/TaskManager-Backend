@@ -10,11 +10,13 @@ namespace TaskManagerBackend.Services
     {
         private readonly IAttachmentRepository attachmentRepository;
         private readonly IMapper mapper;
+        private readonly ITaskRepository _taskRepository;
 
-        public AttachmentService(IAttachmentRepository attachmentRepository, IMapper mapper)
+        public AttachmentService(IAttachmentRepository attachmentRepository, IMapper mapper, ITaskRepository taskRepository)
         {
             this.attachmentRepository = attachmentRepository;
             this.mapper = mapper;
+            _taskRepository = taskRepository;
         }
         public async Task<List<AttachmentDto>> GetAttachmentsByTaskIdAsync(int taskId)
         {
@@ -37,28 +39,37 @@ namespace TaskManagerBackend.Services
         public async Task DeleteAttachmentAsync(int id, string userId)
         {
             var attachment = await attachmentRepository.GetByIdAsync(id);
-            if (attachment == null || attachment.UploadedById != userId)
-                throw new UnauthorizedAccessException("Attachment not found or access denied.");
+            if (attachment == null)
+                throw new FileNotFoundException("Attachment not found");
+            if (attachment.UploadedById != userId)
+                throw new UnauthorizedAccessException("Access denied.");
 
             await attachmentRepository.DeleteAsync(attachment);
         }
 
 
         public async Task<AttachmentDto> UploadAsync(UploadAttachmentRequestDto request, string userId, int taskId)
-        {       
-            var attachment = new Attachment     
+        {
+            var task = await _taskRepository.GetTaskByIdAsync(taskId);
+            if (!task.AssignedUsers.Any(u => u.UserId == userId))
+            {
+                throw new UnauthorizedAccessException("Access denied.");
+            }
+
+
+            var attachment = new Attachment
             {
                 TaskId = taskId,
                 UploadedById = userId,
                 File = request.File,
-                FileName = Path.GetFileNameWithoutExtension(request.File.FileName).ToLowerInvariant(),
+                FileName = request.FileName.Trim().ToLowerInvariant(), 
                 ContentType = request.File.ContentType,
                 FileExtension = Path.GetExtension(request.File.FileName).ToLowerInvariant(),
                 FileSizeInBytes = request.File.Length,
                 DateUploaded = DateTime.UtcNow
             };
 
-            attachment= await attachmentRepository.UploadAsync(attachment, taskId);
+            attachment = await attachmentRepository.UploadAsync(attachment, taskId);
 
             return mapper.Map<AttachmentDto>(attachment);
 

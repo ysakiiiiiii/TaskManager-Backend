@@ -38,17 +38,9 @@ public class CheckListController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ApiResponse.ErrorResponse("Invalid data", ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)));
-            }
-
-            if (dto == null)
-            {
-                return BadRequest(ApiResponse.ErrorResponse("CheckList cannot be null"));
-            }
+            var userId = this.GetUserId();
+            var validationResult = this.ValidateRequest(dto, userId);
+            if (validationResult is not OkResult) return validationResult;
 
             var createdCheckList = await _checkListService.CreateCheckListAsync(taskId, dto);
 
@@ -61,19 +53,16 @@ public class CheckListController : ControllerBase
         }
     }
 
-    [HttpPut("{checkListId}")]
-    public async Task<IActionResult> UpdateCheckList([FromRoute] int checkListId, [FromBody] UpdateCheckListItemDto dto)
+    [HttpPut]
+    public async Task<IActionResult> UpdateCheckList([FromBody] UpdateCheckListDto dto)
     {
         try
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ApiResponse.ErrorResponse("Invalid data", ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)));
-            }
+            var userId = this.GetUserId();
+            var validationResult = this.ValidateRequest(dto, userId);
+            if (validationResult is not OkResult) return validationResult;
 
-            var updatedCheckList = await _checkListService.UpdateCheckListAsync(checkListId, dto);
+            var updatedCheckList = await _checkListService.UpdateCheckListAsync(dto);
             if (updatedCheckList == null)
             {
                 return NotFound(ApiResponse.ErrorResponse("Checklist item not found"));
@@ -83,7 +72,7 @@ public class CheckListController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error updating checklist with ID {checkListId}");
+            _logger.LogError(ex, $"Error updating checklist");
             return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while updating the checklist item"));
         }
     }
@@ -93,6 +82,10 @@ public class CheckListController : ControllerBase
     {
         try
         {
+            var userId = this.GetUserId();
+            var validationResult = this.ValidateRequest(userId);
+            if (validationResult is not OkResult) return validationResult;
+
             var deletedCheckList = await _checkListService.DeleteCheckListAsync(checkListId);
             if (deletedCheckList == null)
             {

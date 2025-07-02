@@ -41,8 +41,9 @@ namespace TaskManagerBackend.Services
                 CreatedById = userId,
                 DateCreated = DateTime.UtcNow,
                 AssignedUsers = dto.AssignedUserIds.Select(uid => new TaskAssignment { UserId = uid }).ToList(),
-                CheckListItems = dto.ChecklistItems.Select(c => new CheckList { Description = c.Description, IsCompleted = false }).ToList(),
+                CheckListItems = dto.ChecklistItems?.Select(c => new CheckList{Description = c.Description, IsCompleted = false }).ToList() ?? new List<CheckList>()
             };
+
 
             var createdTask = await _taskRepository.CreateTaskAsync(taskItem);
             return _mapper.Map<TaskDto>(createdTask);
@@ -62,7 +63,6 @@ namespace TaskManagerBackend.Services
             if (dto.StatusId != null) task.StatusId = dto.StatusId.Value;
             if (dto.DueDate != null) task.DueDate = dto.DueDate;
 
-            // Update assigned users if provided
             if (dto.AssignedUserIds != null)
             {
                 task.AssignedUsers = dto.AssignedUserIds
@@ -70,14 +70,11 @@ namespace TaskManagerBackend.Services
                     .ToList();
             }
 
-            // Update checklist items if provided
             if (dto.ChecklistItems != null)
             {
                 foreach (var item in dto.ChecklistItems)
                 {
-                    if (!task.CheckListItems.Any(existing =>
-                        string.Equals(existing.Description.Trim(), item.Description.Trim(),
-                        StringComparison.OrdinalIgnoreCase)))
+                    if (!task.CheckListItems.Any(existing => string.Equals(existing.Description.Trim(), item.Description.Trim(), StringComparison.OrdinalIgnoreCase)))
                     {
                         task.CheckListItems.Add(new CheckList
                         {

@@ -47,7 +47,10 @@ namespace TaskManagerBackend.Services
         {
             var comment = await commentRepository.GetCommentByIdAsync(commentId);
             if (comment == null) return null;
-            if (comment.UserId != userId) return new CommentDto();
+            if (comment.UserId != userId)
+            {
+               throw new UnauthorizedAccessException("You are not authorized to update this comment");
+            }
 
             comment.Content = updateCommentDto.Content;
             comment.DateUpdated = DateTime.UtcNow;

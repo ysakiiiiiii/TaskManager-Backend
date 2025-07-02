@@ -18,6 +18,8 @@ namespace TaskManagerBackend.Mappings
             CreateMap<TaskAssignment, TaskAssignmentDto>().ReverseMap();
 
             CreateMap<CheckList, CheckListDto>().ReverseMap();
+            CreateMap<UpdateCheckListDto, CheckList>();
+
 
             CreateMap<Attachment, AttachmentDto>().ReverseMap();
 

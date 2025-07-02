@@ -34,6 +34,10 @@ public class AttachmentController : ControllerBase
         try
         {
             var attachments = await _attachmentService.GetAttachmentsByTaskIdAsync(taskId);
+            if(attachments == null || !attachments.Any())
+            {
+                return NotFound(ApiResponse.ErrorResponse($"Attachment not found within the task with id {taskId}"));
+            }
             return Ok(ApiResponse.SuccessResponse(attachments));
         }
         catch (Exception ex)
@@ -105,6 +109,10 @@ public class AttachmentController : ControllerBase
             var uploadedFile = await _attachmentService.UploadAsync(request, userId, taskId);
             return Ok(ApiResponse.SuccessResponse(uploadedFile, "File uploaded successfully"));
         }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(403, ApiResponse.ErrorResponse("You are not authorized to upload attachment"));
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Error uploading attachment for task ID {taskId}");
@@ -122,6 +130,8 @@ public class AttachmentController : ControllerBase
             {
                 return Unauthorized(ApiResponse.ErrorResponse("User not authenticated"));
             }
+
+
 
             await _attachmentService.DeleteAttachmentAsync(attachmentId, userId);
             return Ok(ApiResponse.SuccessResponse(null, "Attachment deleted successfully"));

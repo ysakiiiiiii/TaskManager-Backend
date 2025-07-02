@@ -7,9 +7,6 @@ namespace TaskManagerBackend.DTOs.Category
     /// </summary>
     public sealed record UpdateCategoryRequestDto
     {
-        [Required(ErrorMessage = "Category ID is required")]
-        public int Id { get; init; }
-
         [Required(ErrorMessage = "Category name is required")]
         [MaxLength(100, ErrorMessage = "Category name cannot exceed 100 characters")]
         [MinLength(3, ErrorMessage = "Category name must be at least 3 characters")]

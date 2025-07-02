@@ -24,5 +24,46 @@ namespace TaskManagerBackend.Helpers
         {
             return controller.User.FindFirstValue(ClaimTypes.NameIdentifier);
         }
+
+        public static IActionResult ValidateRequest(this ControllerBase controller, object dto, string? userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return controller.Unauthorized(ApiResponse.ErrorResponse("User not authenticated"));
+            }
+
+            if (!controller.ModelState.IsValid)
+            {
+                var errors = controller.ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage);
+                return controller.BadRequest(ApiResponse.ErrorResponse("Invalid data", errors));
+            }
+
+            if (dto == null)
+            {
+                return controller.BadRequest(ApiResponse.ErrorResponse("Request body cannot be null"));
+            }
+
+            return controller.Ok();
+        }
+
+        public static IActionResult ValidateRequest(this ControllerBase controller, string? userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return controller.Unauthorized(ApiResponse.ErrorResponse("User not authenticated"));
+            }
+
+            if (!controller.ModelState.IsValid)
+            {
+                var errors = controller.ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage);
+                return controller.BadRequest(ApiResponse.ErrorResponse("Invalid data", errors));
+            }
+            return controller.Ok();
+        }
     }
+
 }

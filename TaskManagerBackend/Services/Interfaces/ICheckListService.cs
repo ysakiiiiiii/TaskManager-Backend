@@ -5,9 +5,8 @@ namespace TaskManagerBackend.Services.Interfaces
     public interface ICheckListService
     {
         Task<List<CheckListDto?>> GetCheckListByTaskAsync(int taskId);
-        Task<CheckListDto> CreateCheckListAsync(int taskId, AddCheckListItemDto addCheckListItemDto);
-        Task<CheckListDto?> UpdateCheckListAsync(int checkListId, UpdateCheckListItemDto updateCheckListItemDto);
-
+        Task<List<CheckListDto>> CreateCheckListAsync(int taskId, AddCheckListItemDto addCheckListItemDto);
+        Task<List<CheckListDto?>> UpdateCheckListAsync(UpdateCheckListDto updateCheckListDto);
         Task<bool?> DeleteCheckListAsync(int checkListId);
     }
 }

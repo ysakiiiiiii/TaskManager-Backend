@@ -7,35 +7,31 @@ namespace TaskManagerBackend.Repositories.Implementations
 {
     public class CheckListRepository : ICheckListRepository
     {
-        private readonly TaskDbContext dbContext;
+        private readonly TaskDbContext _dbContext;
         public CheckListRepository(TaskDbContext dbContext)
         {
-            this.dbContext = dbContext;
+            _dbContext = dbContext;
         }
 
-        public TaskDbContext DbContext { get; }
-
-        public async Task<CheckList> CreateCheckListAsync(int taskId, CheckList checkList)
+        public async Task<List<CheckList>> CreateCheckListAsync(List<CheckList> checkLists)
         {
-            await dbContext.ChecklistItems.AddAsync(checkList);
-            await dbContext.SaveChangesAsync();
-
-            return checkList;
+            await _dbContext.ChecklistItems.AddRangeAsync(checkLists);
+            await _dbContext.SaveChangesAsync();
+            return checkLists;
         }
 
         public async Task<bool?> DeleteCheckListAsync(CheckList checkList)
         {
-            dbContext.ChecklistItems.Remove(checkList);
-            await dbContext.SaveChangesAsync();
+            _dbContext.ChecklistItems.Remove(checkList);
+            await _dbContext.SaveChangesAsync();
             return true;
         }
 
-        public async Task<CheckList?> GetCheckListById(int checkListId) => await dbContext.ChecklistItems.FirstOrDefaultAsync(c => c.Id == checkListId);
-
+        public async Task<CheckList?> GetCheckListById(int checkListId) => await _dbContext.ChecklistItems.FirstOrDefaultAsync(c => c.Id == checkListId);
 
         public async Task<List<CheckList>> GetCheckListByTaskAsync(int taskId)
         {
-            var checkList = await dbContext.ChecklistItems
+            var checkList = await _dbContext.ChecklistItems
                 .Where(c => c.TaskId == taskId)
                 .ToListAsync();
 
@@ -45,8 +41,8 @@ namespace TaskManagerBackend.Repositories.Implementations
 
         public async Task<CheckList> UpdateCheckListAsync(CheckList checkList)
         {
-            dbContext.Update(checkList);
-            await dbContext.SaveChangesAsync();
+            _dbContext.Update(checkList);
+            await _dbContext.SaveChangesAsync();
             return checkList;
         }
     }

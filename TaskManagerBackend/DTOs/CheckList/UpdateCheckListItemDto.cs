@@ -2,11 +2,20 @@
 
 namespace TaskManagerBackend.DTOs.CheckList
 {
-/// <summary>
+    /// <summary>
     /// Request DTO for updating a checklist item
     /// </summary>
-    public sealed record UpdateCheckListItemDto
+    public sealed record UpdateCheckListDto
     {
+        [Required]
+        public List<UpdateItemDto> Items { get; init; } = new();
+    }
+
+    public sealed record UpdateItemDto
+    {
+        [Required(ErrorMessage = "Checklist id is required")]
+        public int Id { get; init; }
+
         [Required(ErrorMessage = "Description is required")]
         [StringLength(500, MinimumLength = 3,ErrorMessage = "Description must be between 3 and 500 characters")]
         [DataType(DataType.MultilineText)]

@@ -5,12 +5,10 @@ namespace TaskManagerBackend.DTOs.TaskAssignment
 {
     public class UpdateTaskAssignmentRequestDto
     {
-        public class AddTaskAssignmentRequestDto
-        {
-            [Required(ErrorMessage = "Assigned user ID is required")]
-            [ValidGuid(ErrorMessage = "Assigned user ID must be a valid GUID.")]
-            public string UserId { get; set; }
-        }
+        
+        [Required(ErrorMessage = "Assigned user ID is required")]
+        [ValidGuid(ErrorMessage = "Assigned user ID must be a valid GUID.")]
+        public string UserId { get; set; }
     }
 }
-}
+

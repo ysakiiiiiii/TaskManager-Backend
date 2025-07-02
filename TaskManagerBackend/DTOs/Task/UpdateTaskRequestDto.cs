@@ -24,7 +24,7 @@ namespace TaskManagerBackend.DTOs.Task
         [FutureDate(ErrorMessage = "Due date must be in the future")]
         public DateTime? DueDate { get; set; }
 
-        public ICollection<AddCheckListItemDto>? ChecklistItems { get; set; }
+        public ICollection<AddItemDto>? ChecklistItems { get; set; }
         public ICollection<string>? AssignedUserIds { get; set; }
     }
 }

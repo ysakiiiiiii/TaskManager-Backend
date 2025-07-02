@@ -100,11 +100,12 @@ namespace TaskManagerBackend.Controllers
 
                 if (updatedComment == null)
                     return NotFound(ApiResponse.ErrorResponse("Comment not found"));
-
-                if (updatedComment.Id == 0)
-                    return StatusCode(403, ApiResponse.ErrorResponse("You are not authorized to update this comment"));
-
+ 
                 return Ok(ApiResponse.SuccessResponse(updatedComment, "Comment updated successfully"));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ApiResponse.ErrorResponse("You are not authorized to assign users to this task."));
             }
             catch (Exception ex)
             {

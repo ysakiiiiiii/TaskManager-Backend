@@ -1,6 +1,8 @@
-﻿namespace TaskManagerBackend.Repositories.Interfaces
+﻿using TaskManagerBackend.Models.Domain;
+
+public interface ITaskAssignmentRepository
 {
-    public interface ITaskAssignmentRepository
-    {
-    }
+    Task<TaskAssignment> GetTaskAssignmentByIdAsync(int taskId);
+    Task<TaskAssignment> AssignUsersToTaskAsync(TaskAssignment assignments);
+    Task<bool> RemoveAssignmentAsync(TaskAssignment assignment);
 }

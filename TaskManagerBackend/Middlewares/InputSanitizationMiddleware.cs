@@ -32,7 +32,7 @@ namespace TaskManagerBackend.Middlewares
             }
 
             // Sanitize form data
-            if (context.Request.HasFormContentType)
+            if (context.Request.HasFormContentType && !context.Request.ContentType.StartsWith("multipart/form-data", StringComparison.OrdinalIgnoreCase))
             {
                 var form = await context.Request.ReadFormAsync();
                 var sanitizedForm = new Dictionary<string, StringValues>();
@@ -42,6 +42,7 @@ namespace TaskManagerBackend.Middlewares
                 }
                 context.Request.Form = new FormCollection(sanitizedForm);
             }
+
 
             // Sanitize route values
             foreach (var (key, value) in context.Request.RouteValues)
