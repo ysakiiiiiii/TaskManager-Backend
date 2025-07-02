@@ -9,8 +9,10 @@ using TaskManagerBackend.Data;
 using TaskManagerBackend.Mappings;
 using TaskManagerBackend.Middlewares;
 using TaskManagerBackend.Models.Domain;
-using TaskManagerBackend.Repositories;
+using TaskManagerBackend.Repositories.Implementations;
+using TaskManagerBackend.Repositories.Interfaces;
 using TaskManagerBackend.Services;
+using TaskManagerBackend.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddConsole();

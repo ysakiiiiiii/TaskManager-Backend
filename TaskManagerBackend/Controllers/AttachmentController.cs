@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using TaskManagerBackend.DTOs.Attachment;
 using TaskManagerBackend.Helpers;
-using TaskManagerBackend.Repositories;
-using TaskManagerBackend.Services;
+using TaskManagerBackend.Repositories.Interfaces;
+using TaskManagerBackend.Services.Interfaces;
 
 [Route("api/[controller]")]
 [ApiController]

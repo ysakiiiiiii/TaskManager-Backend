@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TaskManagerBackend.DTOs.User;
 using TaskManagerBackend.Helpers;
 using TaskManagerBackend.Models.Domain;
-using TaskManagerBackend.Repositories;
+using TaskManagerBackend.Repositories.Interfaces;
 
 namespace TaskManagerBackend.Controllers
 {
