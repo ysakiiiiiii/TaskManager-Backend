@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TaskManagerBackend.DTOs.CheckList;
 using TaskManagerBackend.Helpers;
-using TaskManagerBackend.Services;
+using TaskManagerBackend.Services.Interfaces;
 
 [Route("api/[controller]")]
 [ApiController]

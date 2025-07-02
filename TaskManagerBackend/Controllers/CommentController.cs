@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagerBackend.DTOs.Comment;
 using TaskManagerBackend.Helpers;
-using TaskManagerBackend.Services;
+using TaskManagerBackend.Services.Interfaces;
 
 namespace TaskManagerBackend.Controllers
 {

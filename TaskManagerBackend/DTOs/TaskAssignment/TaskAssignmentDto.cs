@@ -1,4 +1,6 @@
-﻿namespace TaskManagerBackend.DTOs.TaskAssignment
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace TaskManagerBackend.DTOs.TaskAssignment
 {
     public class TaskAssignmentDto
     {
