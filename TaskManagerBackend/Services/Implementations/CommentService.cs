@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using TaskManagerBackend.DTOs.Comment;
+using TaskManagerBackend.Exceptions;
 using TaskManagerBackend.Models.Domain;
+using TaskManagerBackend.Repositories.Implementations;
 using TaskManagerBackend.Repositories.Interfaces;
 using TaskManagerBackend.Services.Interfaces;
 
@@ -8,73 +10,77 @@ namespace TaskManagerBackend.Services
 {
     public class CommentService : ICommentService
     {
-        private readonly ICommentRepository commentRepository;
-        private readonly IMapper mapper;
+        private readonly ICommentRepository _commentRepository;
+        private readonly ITaskRepository _taskRepository;
+        private readonly IMapper _mapper;
 
-        public CommentService(ICommentRepository commentRepository, IMapper mapper)
+        public CommentService(ICommentRepository commentRepository, ITaskRepository taskRepository ,IMapper mapper)
         {
-            this.commentRepository = commentRepository;
-            this.mapper = mapper;
-        }
-
-        public async Task<CommentDto> CreateCommentAsync(int taskId, CreateCommentRequestDto createCommentDto, string userId)
-        {
-            var comments = new Comment
-            {
-                TaskId = taskId,
-                UserId = userId,
-                Content = createCommentDto.Content,
-                DateCreated = DateTime.UtcNow,
-            };
-
-            var createdComment = await commentRepository.CreateCommentAsync(comments);
-            return mapper.Map<CommentDto>(createdComment);
+            _commentRepository = commentRepository;
+            _taskRepository = taskRepository;
+            _mapper = mapper;
         }
 
         public async Task<CommentDto> GetCommentByIdAsync(int commentId)
         {
-           var comment = await commentRepository.GetCommentByIdAsync(commentId);
-           return mapper.Map<CommentDto>(comment);
+            var comment = await _commentRepository.GetCommentByIdAsync(commentId)
+                ?? throw new NotFoundException($"Comment with ID {commentId} not found");
+
+            return _mapper.Map<CommentDto>(comment);
         }
 
         public async Task<List<CommentDto>> GetCommentsByTaskAsync(int taskId)
         {
-            var comments = await commentRepository.GetCommentsByTaskAsync(taskId);
-            return mapper.Map<List<CommentDto>>(comments);
+            var comments = await _commentRepository.GetCommentsByTaskAsync(taskId);
+
+            if (comments == null || !comments.Any())
+                throw new NotFoundException($"No comment found in task with ID {taskId}");
+
+            return _mapper.Map<List<CommentDto>>(comments);
         }
 
-        public async Task<CommentDto?> UpdateCommentAsync(int commentId, UpdateCommentRequestDto updateCommentDto, string userId)
+        public async Task<CommentDto> CreateCommentAsync(int taskId, CreateCommentRequestDto dto, string userId)
         {
-            var comment = await commentRepository.GetCommentByIdAsync(commentId);
-            if (comment == null) return null;
-            if (comment.UserId != userId)
-            {
-               throw new UnauthorizedAccessException("You are not authorized to update this comment");
-            }
+            var task = await _taskRepository.GetTaskByIdAsync(taskId)
+                ?? throw new NotFoundException($"Task with ID {taskId} not found");
 
-            comment.Content = updateCommentDto.Content;
-            comment.DateUpdated = DateTime.UtcNow;
+            if (!task.AssignedUsers.Any(u => u.UserId == userId))
+                throw new ForbiddenException("You are not assigned to this task and cannot comment.");
 
-            var result = await commentRepository.UpdateCommentAsync(comment);
-            if (result == null) return null;
+            var comment = _mapper.Map<Comment>(dto);
+            comment.TaskId = taskId;
+            comment.UserId = userId;
+            comment.DateCreated = DateTime.UtcNow;
 
-            return mapper.Map<CommentDto>(result);
+            var created = await _commentRepository.CreateCommentAsync(comment);
+            return _mapper.Map<CommentDto>(created);
         }
 
-
-        public async Task<bool?> DeleteCommentAsync(int commentId, string userId)
+        public async Task<CommentDto> UpdateCommentAsync(int commentId, UpdateCommentRequestDto dto, string userId)
         {
-            var comment = await commentRepository.GetCommentByIdAsync(commentId);
+            var comment = await _commentRepository.GetCommentByIdAsync(commentId)
+                ?? throw new NotFoundException($"Comment with ID {commentId} not found");
 
-            if (comment == null)
-                return null;
             if (comment.UserId != userId)
-                return false;
+                throw new ForbiddenException("You are not authorized to update this comment");
 
-            return await commentRepository.DeleteCommentAsync(comment);
+            _mapper.Map(dto, comment);
+
+            var updated = await _commentRepository.UpdateCommentAsync(comment);
+            return _mapper.Map<CommentDto>(updated);
         }
 
+        public async Task DeleteCommentAsync(int commentId, string userId)
+        {
+            var comment = await _commentRepository.GetCommentByIdAsync(commentId)
+                ?? throw new NotFoundException($"Comment with ID {commentId} not found");
 
-        
+            if (comment.UserId != userId)
+                throw new ForbiddenException("You are not authorized to delete this comment");
+
+            var success = await _commentRepository.DeleteCommentAsync(comment);
+            if (!success)
+                throw new ApplicationException("Failed to delete comment");
+        }
     }
 }

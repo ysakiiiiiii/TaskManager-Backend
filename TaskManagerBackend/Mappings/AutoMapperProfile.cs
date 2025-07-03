@@ -27,6 +27,10 @@ namespace TaskManagerBackend.Mappings
             CreateMap<Category, CategoryDto>().ReverseMap();
 
             CreateMap<Comment, CommentDto>().ReverseMap();
+            CreateMap<CreateCommentRequestDto, Comment>();
+
+            CreateMap<UpdateCommentRequestDto, Comment>()
+                .ForMember(dest => dest.DateUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
 
             CreateMap<UploadAttachmentRequestDto, Attachment>()
                 .ForMember(dest => dest.FileName, opt => opt.MapFrom(src => src.FileName.Trim().ToLowerInvariant()))

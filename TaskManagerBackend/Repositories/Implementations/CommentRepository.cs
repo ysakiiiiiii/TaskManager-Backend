@@ -13,14 +13,6 @@ namespace TaskManagerBackend.Repositories.Implementations
         {
             this.dbContext = dbContext;
         }
-
-        public async Task<Comment> CreateCommentAsync(Comment comment)
-        {
-            await dbContext.AddAsync(comment);
-            await dbContext.SaveChangesAsync();
-            return comment;
-        }
-
         public async Task<Comment> GetCommentByIdAsync(int commentId)
         {
             var comment = await dbContext.Comments.FirstOrDefaultAsync(c => c.Id == commentId);
@@ -36,6 +28,14 @@ namespace TaskManagerBackend.Repositories.Implementations
 
             return comments;
         }
+
+        public async Task<Comment> CreateCommentAsync(Comment comment)
+        {
+            await dbContext.AddAsync(comment);
+            await dbContext.SaveChangesAsync();
+            return comment;
+        }
+
 
         public async Task<Comment> UpdateCommentAsync(Comment comment)
         {

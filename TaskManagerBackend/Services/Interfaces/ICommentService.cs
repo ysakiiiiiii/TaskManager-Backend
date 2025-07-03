@@ -9,6 +9,5 @@ namespace TaskManagerBackend.Services.Interfaces
         Task<CommentDto> GetCommentByIdAsync(int commentId);
         Task<CommentDto> CreateCommentAsync(int taskId, CreateCommentRequestDto createCommentDto, string userId);
         Task<CommentDto?> UpdateCommentAsync(int commentId, UpdateCommentRequestDto updateCommentDto, string userId);
-        Task<bool?> DeleteCommentAsync(int commentId, string userId);
-    }
+        Task DeleteCommentAsync(int commentId, string userId)    }
 }

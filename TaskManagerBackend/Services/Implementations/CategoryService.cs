@@ -21,16 +21,16 @@ namespace TaskManagerBackend.Services
         public async Task<List<CategoryDto>> GetAllCategoriesAsync()
         {
             var categories = await _categoryRepository.GetAllCategoryAsync();
-            if (categories == null || !categories.Any())
-                throw new NotFoundException("No categories found");
 
+            if (categories == null || !categories.Any()) 
+                throw new NotFoundException("No categories found");
+     
             return _mapper.Map<List<CategoryDto>>(categories);
         }
 
         public async Task<CategoryDto> GetCategoryByIdAsync(int id)
         {
-            var category = await _categoryRepository.GetCategoryByIdAsync(id)
-                ?? throw new NotFoundException($"Category with ID {id} not found");
+            var category = await _categoryRepository.GetCategoryByIdAsync(id) ?? throw new NotFoundException($"Category with ID {id} not found");
 
             return _mapper.Map<CategoryDto>(category);
         }
