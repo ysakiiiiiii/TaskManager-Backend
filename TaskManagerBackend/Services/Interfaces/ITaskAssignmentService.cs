@@ -7,6 +7,6 @@ namespace TaskManagerBackend.Services.Interfaces
         Task<TaskAssignmentDto>GetTaskAssignmentByIdAsync(int taskId);
         Task<TaskAssignmentDto> AssignUserToTaskAsync(int taskId, string currentUser, AddTaskAssignmentRequestDto dto);
         Task<TaskAssignmentDto> UpdateAssignedUsersAsync(int taskId, string currentUser, UpdateTaskAssignmentRequestDto dto);
-        Task<bool?> RemoveAssignmentsAsync(int taskId, string currentUser);
+        Task<bool> RemoveAssignmentsAsync(int taskId, string currentUser);
     }
 }

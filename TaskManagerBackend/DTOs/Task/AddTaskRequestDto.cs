@@ -29,6 +29,6 @@ namespace TaskManagerBackend.DTOs.Task
         public DateTime? DueDate { get; set; }
 
         public ICollection<string> AssignedUserIds { get; set; } = new List<string>();
-        public ICollection<AddItemDto> ChecklistItems { get; set; } = new List<AddItemDto>();
+        public ICollection<CheckListDto> ChecklistItems { get; set; } = new List<CheckListDto>();
     }
 }

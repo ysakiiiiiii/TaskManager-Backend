@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using TaskManagerBackend.DTOs.TaskAssignment;
+using TaskManagerBackend.Exceptions;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories.Interfaces;
 using TaskManagerBackend.Services.Interfaces;
@@ -25,18 +25,19 @@ namespace TaskManagerBackend.Services
 
         public async Task<TaskAssignmentDto> GetTaskAssignmentByIdAsync(int taskId)
         {
-            var assignments = await _taskAssignmentRepository.GetTaskAssignmentByIdAsync(taskId);
-            if (assignments == null) return null;
+            var assignments = await _taskAssignmentRepository.GetTaskAssignmentByIdAsync(taskId)
+                ?? throw new NotFoundException($"Task assignment with task ID {taskId} not found");
+
             return _mapper.Map<TaskAssignmentDto>(assignments);
         }
 
         public async Task<TaskAssignmentDto> AssignUserToTaskAsync(int taskId, string currentUser, AddTaskAssignmentRequestDto dto)
         {
-            var task = await _taskRepository.GetTaskByIdAsync(taskId);
-            if (task == null) return null;
+            var task = await _taskRepository.GetTaskByIdAsync(taskId)
+                ?? throw new NotFoundException($"Task with ID {taskId} not found");
 
             if (task.CreatedById != currentUser)
-                throw new UnauthorizedAccessException("You are not the owner of this task");
+                throw new ForbiddenException("You are not allowed to assign a user to this task.");
 
             var assignment = new TaskAssignment
             {
@@ -50,15 +51,18 @@ namespace TaskManagerBackend.Services
 
         public async Task<TaskAssignmentDto> UpdateAssignedUsersAsync(int taskId, string currentUser, UpdateTaskAssignmentRequestDto dto)
         {
-            var task = await _taskRepository.GetTaskByIdAsync(taskId);
-            if (task == null) return null;
+            var task = await _taskRepository.GetTaskByIdAsync(taskId)
+                ?? throw new NotFoundException($"Task with ID {taskId} not found");
 
             if (task.CreatedById != currentUser)
-                throw new UnauthorizedAccessException("You are not the owner of this task");
+                throw new ForbiddenException("You are not allowed to update assignments for this task.");
 
             var existing = await _taskAssignmentRepository.GetTaskAssignmentByIdAsync(taskId);
+
             if (existing != null)
+            {
                 await _taskAssignmentRepository.RemoveAssignmentAsync(existing);
+            }
 
             var newAssignment = new TaskAssignment
             {
@@ -70,26 +74,20 @@ namespace TaskManagerBackend.Services
             return _mapper.Map<TaskAssignmentDto>(added);
         }
 
-        public async Task<bool?> RemoveAssignmentsAsync(int taskId, string currentUser)
+        public async Task<bool> RemoveAssignmentsAsync(int taskId, string currentUser)
         {
-            var task = await _taskRepository.GetTaskByIdAsync(taskId);
-            if (task == null)
-                return null;
+            var task = await _taskRepository.GetTaskByIdAsync(taskId)
+                ?? throw new NotFoundException($"Task with ID {taskId} not found");
 
             if (task.CreatedById != currentUser)
-                throw new UnauthorizedAccessException("You are not the owner of this task");
+                throw new ForbiddenException("You are not allowed to remove assignments for this task.");
 
-            var existingAssignment = await _taskAssignmentRepository.GetTaskAssignmentByIdAsync(taskId);
-            if (existingAssignment == null)
-                return false;
+            var existingAssignment = await _taskAssignmentRepository.GetTaskAssignmentByIdAsync(taskId)
+                ?? throw new NotFoundException($"No assignment found for task ID {taskId}.");
 
             await _taskAssignmentRepository.RemoveAssignmentAsync(existingAssignment);
 
             return true;
         }
-
     }
-
-
 }
-

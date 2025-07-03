@@ -34,7 +34,7 @@ namespace TaskManagerBackend.Controllers
             var userId = this.GetUserId();
             var createdComment = await _commentService.CreateCommentAsync(taskId, dto, userId);
 
-            return CreatedAtAction(nameof(GetCommentsByTaskAsync),
+            return CreatedAtAction("GetCommentsByTask",
                 new { taskId = createdComment.TaskId },
                 ApiResponse.SuccessResponse(createdComment, "Comment created successfully"));
         }

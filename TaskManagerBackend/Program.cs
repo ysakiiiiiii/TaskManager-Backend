@@ -10,7 +10,7 @@ using TaskManagerBackend.Data;
 using TaskManagerBackend.Mappings;
 using TaskManagerBackend.Middlewares;
 using TaskManagerBackend.Models.Domain;
-using TaskManagerBackend.Repositories.Implementations;
+using TaskManagerBackend.Repositories.Implementations;  
 using TaskManagerBackend.Repositories.Interfaces;
 using TaskManagerBackend.Services;
 using TaskManagerBackend.Services.Interfaces;
@@ -59,7 +59,11 @@ builder.Services.AddSwaggerGen(options =>
 
 // DbContext
 builder.Services.AddDbContext<TaskDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("TaskManagerConnection")));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("TaskManagerConnection"));
+    options.EnableSensitiveDataLogging();
+});
+
 
 // Identity
 builder.Services.AddIdentity<User, IdentityRole>()
@@ -117,6 +121,8 @@ builder.Services.AddScoped<IAttachmentRepository, LocalAttachmentRepository>();
 builder.Services.AddScoped<ICheckListService, CheckListService>();
 builder.Services.AddScoped<ICheckListRepository, CheckListRepository>();
 
+builder.Services.AddScoped<ITaskAssignmentService, TaskAssignmentService>();
+builder.Services.AddScoped<ITaskAssignmentRepository, TaskAssignmentRepository>();
 
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();
 builder.Services.AddAutoMapper(typeof(AutoMappingProfile));
@@ -125,7 +131,6 @@ builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, RoleAuthorizationMiddlewareResultHandler>();
 
 var app = builder.Build();
-
 
 if (app.Environment.IsDevelopment())
 {

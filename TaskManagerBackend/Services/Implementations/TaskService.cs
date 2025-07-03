@@ -1,5 +1,7 @@
-﻿using AutoMapper;
+﻿// Services/TaskService.cs
+using AutoMapper;
 using TaskManagerBackend.DTOs.Task;
+using TaskManagerBackend.Exceptions;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories.Interfaces;
 
@@ -7,61 +9,78 @@ namespace TaskManagerBackend.Services
 {
     public class TaskService : ITaskService
     {
-        private readonly ITaskRepository _taskRepository;   
+        private readonly ITaskRepository _taskRepository;
         private readonly IMapper _mapper;
+        private readonly ITaskAssignmentRepository _taskAssignmentRepository;
 
-        public TaskService(ITaskRepository taskRepository, IMapper mapper)
+        public TaskService(ITaskRepository taskRepository, IMapper mapper, ITaskAssignmentRepository taskAssignmentRepository)
         {
             _taskRepository = taskRepository;
             _mapper = mapper;
+            _taskAssignmentRepository = taskAssignmentRepository;
         }
 
         public async Task<List<TaskDto>> GetAllTasksAsync()
         {
             var tasks = await _taskRepository.GetAllTasksAsync();
+            if (tasks == null || !tasks.Any())
+            {
+                throw new NotFoundException("No tasks found");
+            }
             return _mapper.Map<List<TaskDto>>(tasks);
         }
 
-        public async Task<TaskDto?> GetTaskByIdAsync(int id)
+        public async Task<TaskDto> GetTaskByIdAsync(int id)
         {
-            var task = await _taskRepository.GetTaskByIdAsync(id);
-            return task == null ? null : _mapper.Map<TaskDto>(task);
+            var task = await _taskRepository.GetTaskByIdAsync(id)
+                ?? throw new NotFoundException($"Task with ID {id} not found");
+            return _mapper.Map<TaskDto>(task);
         }
 
         public async Task<TaskDto> CreateTaskAsync(AddTaskRequestDto dto, string userId)
         {
-            var taskItem = new TaskItem
+            if (string.IsNullOrEmpty(userId))
             {
-                Title = dto.Title,
-                Description = dto.Description,
-                CategoryId = dto.CategoryId,
-                PriorityId = dto.PriorityId,
-                StatusId = dto.StatusId,
-                DueDate = dto.DueDate,
-                CreatedById = userId,
-                DateCreated = DateTime.UtcNow,
-                AssignedUsers = dto.AssignedUserIds.Select(uid => new TaskAssignment { UserId = uid }).ToList(),
-                CheckListItems = dto.ChecklistItems?.Select(c => new CheckList{Description = c.Description, IsCompleted = false }).ToList() ?? new List<CheckList>()
-            };
+                throw new ForbiddenException("User not authenticated");
+            }
 
+            var taskItem = _mapper.Map<TaskItem>(dto);
+
+            taskItem.CreatedById = userId;
+            taskItem.DateCreated = DateTime.UtcNow;
 
             var createdTask = await _taskRepository.CreateTaskAsync(taskItem);
+
+            if (dto.AssignedUserIds != null && dto.AssignedUserIds.Any())
+            {
+                foreach (var assignedUserId in dto.AssignedUserIds)
+                {
+                    var assignment = new TaskAssignment
+                    {
+                        TaskId = createdTask.Id,
+                        UserId = assignedUserId
+                    };
+                    await _taskAssignmentRepository.AssignUsersToTaskAsync(assignment);
+                }
+            }
+
             return _mapper.Map<TaskDto>(createdTask);
         }
 
-        public async Task<TaskDto?> UpdateTaskAsync(int taskId, UpdateTaskRequestDto dto, string userId)
+        public async Task<TaskDto> UpdateTaskAsync(int taskId, UpdateTaskRequestDto dto, string userId)
         {
-            var task = await _taskRepository.GetTaskByIdAsync(taskId);
-            if (task == null) return null;
-            if (task.CreatedById != userId) return new TaskDto();
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ForbiddenException("User not authenticated");
+            }
 
-            // Update main task properties
-            if (dto.Title != null) task.Title = dto.Title;
-            if (dto.Description != null) task.Description = dto.Description;
-            if (dto.CategoryId != null) task.CategoryId = dto.CategoryId.Value;
-            if (dto.PriorityId != null) task.PriorityId = dto.PriorityId.Value;
-            if (dto.StatusId != null) task.StatusId = dto.StatusId.Value;
-            if (dto.DueDate != null) task.DueDate = dto.DueDate;
+            var task = await _taskRepository.GetTaskByIdAsync(taskId)
+                ?? throw new NotFoundException($"Task with ID {taskId} not found");
+
+            if (task.CreatedById != userId)
+                throw new ForbiddenException("You are not authorized to update this task");
+
+            _mapper.Map(dto, task);
 
             if (dto.AssignedUserIds != null)
             {
@@ -90,13 +109,20 @@ namespace TaskManagerBackend.Services
             return _mapper.Map<TaskDto>(updatedTask);
         }
 
-        public async Task<bool?> DeleteTaskAsync(int taskId, string userId)
+        public async Task DeleteTaskAsync(int taskId, string userId)
         {
-            var task = await _taskRepository.GetTaskByIdAsync(taskId);
-            if (task == null) return null;
-            if (task.CreatedById != userId) return false;
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ForbiddenException("User not authenticated");
+            }
 
-            return await _taskRepository.DeleteTaskAsync(task);
+            var task = await _taskRepository.GetTaskByIdAsync(taskId)
+                ?? throw new NotFoundException($"Task with ID {taskId} not found");
+
+            if (task.CreatedById != userId)
+                throw new ForbiddenException("You are not authorized to delete this task");
+
+            await _taskRepository.DeleteTaskAsync(task);
         }
     }
 }

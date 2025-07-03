@@ -14,6 +14,33 @@ namespace TaskManagerBackend.Mappings
         public AutoMappingProfile()
         {
             CreateMap<TaskItem, TaskDto>().ReverseMap();
+            CreateMap<AddTaskRequestDto, TaskItem>()
+                .ForMember(dest => dest.CheckListItems, opt => opt.MapFrom(src => src.ChecklistItems))
+                .ForMember(dest => dest.AssignedUsers, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedById, opt => opt.Ignore())
+                .ForMember(dest => dest.DateCreated, opt => opt.Ignore())
+                .AfterMap((src, dest) =>
+                {
+                    if (dest.CheckListItems != null)
+                    {
+                        foreach (var item in dest.CheckListItems)
+                        {
+                            item.IsCompleted = false;
+                        }
+                    }
+                });
+            CreateMap<UpdateTaskRequestDto, TaskItem>()
+                .ForMember(dest => dest.CheckListItems, opt => opt.Ignore()) 
+                .ForMember(dest => dest.AssignedUsers, opt => opt.Ignore())  
+                .ForMember(dest => dest.DateModified, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForMember(dest => dest.CreatedById, opt => opt.Ignore())
+                .ForMember(dest => dest.DateCreated, opt => opt.Ignore());
+            
+            
+            CreateMap<CheckListDto, CheckList>()
+                .ForMember(dest => dest.IsCompleted, opt => opt.MapFrom(_ => false))
+                .ForMember(dest => dest.TaskId, opt => opt.Ignore());
+
             CreateMap<TaskAssignment, TaskAssignmentDto>().ReverseMap();
             CreateMap<CheckList, CheckListDto>().ReverseMap();
             CreateMap<UpdateChecklistItemDto, CheckList>()

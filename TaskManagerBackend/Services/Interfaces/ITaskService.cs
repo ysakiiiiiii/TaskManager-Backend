@@ -7,5 +7,5 @@ public interface ITaskService
     Task<TaskDto?> GetTaskByIdAsync(int taskId);
     Task<TaskDto> CreateTaskAsync(AddTaskRequestDto dto, string userId);
     Task<TaskDto?> UpdateTaskAsync(int taskId, UpdateTaskRequestDto dto, string userId);
-    Task<bool?> DeleteTaskAsync(int taskId, string userId);
+    Task DeleteTaskAsync(int taskId, string userId);
 }

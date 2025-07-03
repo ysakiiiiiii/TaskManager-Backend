@@ -16,21 +16,39 @@ namespace TaskManagerBackend.Repositories.Implementations
 
         public async Task<TaskAssignment> GetTaskAssignmentByIdAsync(int taskId)
         {
-            return await _dbContext.TaskAssignments.FirstOrDefaultAsync(t => t.TaskId == taskId);
+            return await _dbContext.TaskAssignments
+                .AsNoTracking() 
+                .FirstOrDefaultAsync(t => t.TaskId == taskId);
         }
 
-        public async Task<TaskAssignment> AssignUsersToTaskAsync(TaskAssignment assignments)
+        public async Task<TaskAssignment> AssignUsersToTaskAsync(TaskAssignment assignment)
         {
-            await _dbContext.TaskAssignments.AddAsync(assignments);
+            var existing = await _dbContext.TaskAssignments
+                .FirstOrDefaultAsync(a => a.TaskId == assignment.TaskId && a.UserId == assignment.UserId);
+
+            if (existing != null)
+            {
+                return existing; 
+            }
+
+            await _dbContext.TaskAssignments.AddAsync(assignment);
             await _dbContext.SaveChangesAsync();
-            return assignments;
+            return assignment;
         }
 
         public async Task<bool> RemoveAssignmentAsync(TaskAssignment assignment)
         {
-            _dbContext.TaskAssignments.Remove(assignment);
-            await _dbContext.SaveChangesAsync();
-            return true;
+            var existing = await _dbContext.TaskAssignments
+                .FirstOrDefaultAsync(a => a.TaskId == assignment.TaskId && a.UserId == assignment.UserId);
+
+            if (existing != null)
+            {
+                _dbContext.TaskAssignments.Remove(existing);
+                await _dbContext.SaveChangesAsync();
+                return true;
+            }
+
+            return false;
         }
     }
 

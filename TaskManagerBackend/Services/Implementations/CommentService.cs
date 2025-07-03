@@ -31,6 +31,9 @@ namespace TaskManagerBackend.Services
 
         public async Task<List<CommentDto>> GetCommentsByTaskAsync(int taskId)
         {
+            var task = await _taskRepository.GetTaskByIdAsync(taskId)
+                ?? throw new NotFoundException($"Task with ID {taskId} not found");
+
             var comments = await _commentRepository.GetCommentsByTaskAsync(taskId);
 
             if (comments == null || !comments.Any())
@@ -41,11 +44,13 @@ namespace TaskManagerBackend.Services
 
         public async Task<CommentDto> CreateCommentAsync(int taskId, CreateCommentRequestDto dto, string userId)
         {
-            var task = await _taskRepository.GetTaskByIdAsync(taskId)
-                ?? throw new NotFoundException($"Task with ID {taskId} not found");
-
+            var task = await _taskRepository.GetTaskByIdAsync(taskId);
             if (!task.AssignedUsers.Any(u => u.UserId == userId))
                 throw new ForbiddenException("You are not assigned to this task and cannot comment.");
+
+            if(task == null) throw new NotFoundException($"Task with ID {taskId} not found");
+
+
 
             var comment = _mapper.Map<Comment>(dto);
             comment.TaskId = taskId;
@@ -58,11 +63,12 @@ namespace TaskManagerBackend.Services
 
         public async Task<CommentDto> UpdateCommentAsync(int commentId, UpdateCommentRequestDto dto, string userId)
         {
-            var comment = await _commentRepository.GetCommentByIdAsync(commentId)
-                ?? throw new NotFoundException($"Comment with ID {commentId} not found");
-
+            var comment = await _commentRepository.GetCommentByIdAsync(commentId);
+            
             if (comment.UserId != userId)
                 throw new ForbiddenException("You are not authorized to update this comment");
+
+            if(comment == null) throw new NotFoundException($"Comment with ID {commentId} not found");
 
             _mapper.Map(dto, comment);
 
