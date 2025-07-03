@@ -20,7 +20,7 @@ namespace TaskManagerBackend.Repositories.Implementations
             return checkLists;
         }
 
-        public async Task<bool?> DeleteCheckListAsync(CheckList checkList)
+        public async Task<bool> DeleteCheckListAsync(CheckList checkList)
         {
             _dbContext.ChecklistItems.Remove(checkList);
             await _dbContext.SaveChangesAsync();
@@ -34,7 +34,6 @@ namespace TaskManagerBackend.Repositories.Implementations
             var checkList = await _dbContext.ChecklistItems
                 .Where(c => c.TaskId == taskId)
                 .ToListAsync();
-
 
             return checkList;
         }

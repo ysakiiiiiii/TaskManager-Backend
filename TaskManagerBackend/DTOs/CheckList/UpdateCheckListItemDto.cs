@@ -5,13 +5,13 @@ namespace TaskManagerBackend.DTOs.CheckList
     /// <summary>
     /// Request DTO for updating a checklist item
     /// </summary>
-    public sealed record UpdateCheckListDto
+    public sealed record UpdateCheckListRequestDto
     {
         [Required]
-        public List<UpdateItemDto> Items { get; init; } = new();
+        public List<UpdateChecklistItemDto> Items { get; init; } = new();
     }
 
-    public sealed record UpdateItemDto
+    public sealed record UpdateChecklistItemDto
     {
         [Required(ErrorMessage = "Checklist id is required")]
         public int Id { get; init; }

@@ -1,6 +1,8 @@
 ﻿using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Http.HttpResults;
 using TaskManagerBackend.DTOs.CheckList;
+using TaskManagerBackend.Exceptions;
 using TaskManagerBackend.Helpers;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories.Implementations;
@@ -11,76 +13,100 @@ namespace TaskManagerBackend.Services
 {
     public class CheckListService : ICheckListService
     {
-        private readonly ICheckListRepository checkListRepository;
+        private readonly ICheckListRepository _checkListRepository;
         private readonly ITaskRepository _taskRepository;
-        private readonly IMapper mapper;
+        private readonly IMapper _mapper;
 
-        public CheckListService(ICheckListRepository checkListRepository,ITaskRepository taskRepository, IMapper mapper)
+        public CheckListService(ICheckListRepository checkListRepository, ITaskRepository taskRepository, IMapper mapper)
         {
-            this.checkListRepository = checkListRepository;
+            _checkListRepository = checkListRepository;
             _taskRepository = taskRepository;
-            this.mapper = mapper;
+            _mapper = mapper;
         }
 
-        public async Task<List<CheckListDto>> CreateCheckListAsync(int taskId, AddCheckListItemDto dto)
+        public async Task<List<CheckListDto>> GetCheckListByTaskAsync(int taskId)
         {
-            //var task = _taskRepository.GetTaskByIdAsync(taskId);
-            //if (task == null)
-            //{
-            //    throw new NotFound(ApiResponse.ErrorResponse("Y"));
-            //}
-
-            var checkListItems = dto.Items.Select(item => new CheckList
+            var list = await _checkListRepository.GetCheckListByTaskAsync(taskId);
+                
+            if(list == null || !list.Any())
             {
-                TaskId = taskId,
-                Description = item.Description,
-                IsCompleted = false
-            }).ToList();
-
-            var createdItems = await checkListRepository.CreateCheckListAsync(checkListItems);
-
-            return mapper.Map<List<CheckListDto>>(createdItems);
-        }
-
-
-        public async Task<bool?> DeleteCheckListAsync(int checkListId)
-        {
-            var checkListItem = await checkListRepository.GetCheckListById(checkListId);
-            if (checkListItem == null)
-            {
-                return null;
+                throw new NotFoundException("No checklist is found");
             }
 
-            return await checkListRepository.DeleteCheckListAsync(checkListItem);
+            return _mapper.Map<List<CheckListDto>>(list);
         }
 
-        public async Task<List<CheckListDto?>> GetCheckListByTaskAsync(int taskId)
+        public async Task<List<CheckListDto>> CreateCheckListAsync(int taskId, string userId, AddCheckListItemDto dto)
         {
-            var checkList = await checkListRepository.GetCheckListByTaskAsync(taskId);
+            var task = await _taskRepository.GetTaskByIdAsync(taskId) ?? throw new NotFoundException("Task not found");
 
-            return mapper.Map<List<CheckListDto>>(checkList);
+            if (!task.AssignedUsers.Any(u => u.UserId == userId))
+                throw new ForbiddenException("You are not allowed to add checklist items to this task");
+            
+            var items = _mapper.Map<List<CheckList>>(dto.Items);
 
-        }
-
-        public async Task<List<CheckListDto?>> UpdateCheckListAsync(UpdateCheckListDto updateCheckListDto)
-        {
-            var updatedCheckLists = new List<CheckListDto>();
-
-            foreach (var item in updateCheckListDto.Items)
+            foreach (var item in items)
             {
-                var existingItem = await checkListRepository.GetCheckListById(item.Id);
-
-                if (existingItem != null)
-                {
-                    existingItem.Description = item.Description;
-
-                    var updatedItem = await checkListRepository.UpdateCheckListAsync(existingItem);
-                    updatedCheckLists.Add(mapper.Map<CheckListDto>(updatedItem));
-                }
+                item.TaskId = taskId;
             }
 
-            return updatedCheckLists;
+
+            var created = await _checkListRepository.CreateCheckListAsync(items);
+            return _mapper.Map<List<CheckListDto>>(created);
+        }
+
+        public async Task<List<CheckListDto>> UpdateCheckListAsync(string userId, UpdateCheckListRequestDto dto)
+        {
+            var result = new List<CheckListDto>();
+
+            foreach (var itemDto in dto.Items)
+            {
+                var existing = await _checkListRepository.GetCheckListById(itemDto.Id) ?? throw new NotFoundException($"Checklist item with ID {itemDto.Id} not found");
+
+                var task = await _taskRepository.GetTaskByIdAsync(existing.TaskId) ?? throw new NotFoundException("Task not found");
+
+                if (!task.AssignedUsers.Any(u => u.UserId == userId))
+                    throw new ForbiddenException("You are not allowed to update this checklist item");
+
+                _mapper.Map(itemDto, existing);
+                var updated = await _checkListRepository.UpdateCheckListAsync(existing);
+                result.Add(_mapper.Map<CheckListDto>(updated));
+            }
+
+            return result;
+        }
+
+        public async Task DeleteCheckListAsync(string userId, int id)
+        {
+            var existing = await _checkListRepository.GetCheckListById(id)
+                ?? throw new NotFoundException("Checklist item not found");
+
+            var task = await _taskRepository.GetTaskByIdAsync(existing.TaskId)
+                ?? throw new NotFoundException("Associated task not found");
+
+            if (!task.AssignedUsers.Any(u => u.UserId == userId))
+                throw new ForbiddenException("You are not allowed to delete this checklist item");
+
+            var success = await _checkListRepository.DeleteCheckListAsync(existing);
+            if (!success)
+                throw new InvalidOperationException("Failed to delete checklist item");
+        }
+
+        public async Task ToggleIsCompletedAsync(string userId, int checkListId)
+        {
+            var item = await _checkListRepository.GetCheckListById(checkListId)
+                       ?? throw new NotFoundException("Checklist item not found");
+
+            var task = await _taskRepository.GetTaskByIdAsync(item.TaskId)
+                       ?? throw new NotFoundException("Task not found");
+
+            if (!task.AssignedUsers.Any(u => u.UserId == userId))
+                throw new ForbiddenException("You are not allowed to modify this checklist item");
+
+            item.IsCompleted = !item.IsCompleted;
+            await _checkListRepository.UpdateCheckListAsync(item);
         }
 
     }
+
 }

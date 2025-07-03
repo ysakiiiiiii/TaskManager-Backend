@@ -8,6 +8,6 @@ namespace TaskManagerBackend.Repositories.Interfaces
         Task<CheckList?> GetCheckListById(int checkListId);
         Task<List<CheckList>> CreateCheckListAsync(List<CheckList> checkLists);
         Task<CheckList> UpdateCheckListAsync(CheckList checkList);
-        Task<bool?> DeleteCheckListAsync(CheckList checkList);
+        Task<bool> DeleteCheckListAsync(CheckList checkList);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using TaskManagerBackend.DTOs.Category;
+using TaskManagerBackend.Exceptions;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories.Interfaces;
 using TaskManagerBackend.Services.Interfaces;
@@ -9,60 +9,54 @@ namespace TaskManagerBackend.Services
 {
     public class CategoryService : ICategoryService
     {
-        private readonly ICategoryRepository categoryRepository;
-        private readonly IMapper mapper;
+        private readonly ICategoryRepository _categoryRepository;
+        private readonly IMapper _mapper;
 
         public CategoryService(ICategoryRepository categoryRepository, IMapper mapper)
         {
-            this.categoryRepository = categoryRepository;
-            this.mapper = mapper;
+            _categoryRepository = categoryRepository;
+            _mapper = mapper;
         }
 
         public async Task<List<CategoryDto>> GetAllCategoriesAsync()
         {
-            var categories = await categoryRepository.GetAllCategoryAsync();
+            var categories = await _categoryRepository.GetAllCategoryAsync();
+            if (categories == null || !categories.Any())
+                throw new NotFoundException("No categories found");
 
-            return mapper.Map<List<CategoryDto>>(categories);
+            return _mapper.Map<List<CategoryDto>>(categories);
         }
 
         public async Task<CategoryDto> GetCategoryByIdAsync(int id)
         {
-            var categoryDomainModel = await categoryRepository.GetCategoryByIdAsync(id);
+            var category = await _categoryRepository.GetCategoryByIdAsync(id)
+                ?? throw new NotFoundException($"Category with ID {id} not found");
 
-
-            return mapper.Map<CategoryDto>(categoryDomainModel);
+            return _mapper.Map<CategoryDto>(category);
         }
 
-
-        public async Task<CategoryDto> CreateCategoryAsync(AddCategoryRequestDto categoryRequestDto)
+        public async Task<CategoryDto> CreateCategoryAsync(AddCategoryRequestDto dto)
         {
-            var category = new Category
-            {
-                Name = categoryRequestDto.Name
-            };
-
-            var createdCategory = await categoryRepository.CreateCategoryAsync(category);
-
-            return mapper.Map<CategoryDto>(createdCategory);
+            var category = _mapper.Map<Category>(dto);
+            var created = await _categoryRepository.CreateCategoryAsync(category);
+            return _mapper.Map<CategoryDto>(created);
         }
 
-        public async Task<CategoryDto?> UpdateCategoryAsync(int id, UpdateCategoryRequestDto updateCategoryRequestDto)
+        public async Task<CategoryDto> UpdateCategoryAsync(int id, UpdateCategoryRequestDto dto)
         {
-            var existingCategory = await categoryRepository.GetCategoryByIdAsync(id);
+            var existing = await _categoryRepository.GetCategoryByIdAsync(id)
+                ?? throw new NotFoundException("Category not found");
 
-            if (existingCategory == null) return null;
-
-            existingCategory.Name = updateCategoryRequestDto.Name;
-
-            var updatedCategory = await categoryRepository.UpdateCategoryAsync(id, existingCategory);
-            return mapper.Map<CategoryDto>(updatedCategory);
+            _mapper.Map(dto, existing);
+            var updated = await _categoryRepository.UpdateCategoryAsync(id, existing);
+            return _mapper.Map<CategoryDto>(updated);
         }
 
-        public async Task<bool> DeleteCategoryAsync(int id)
+        public async Task DeleteCategoryAsync(int id)
         {
-            var result = await categoryRepository.DeleteCategoryAsync(id);
-            return result != null;
+            var deleted = await _categoryRepository.DeleteCategoryAsync(id);
+            if (deleted == null)
+                throw new NotFoundException("Category not found or already deleted");
         }
-
     }
 }
