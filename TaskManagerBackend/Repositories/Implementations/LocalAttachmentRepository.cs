@@ -55,6 +55,7 @@ namespace TaskManagerBackend.Repositories.Implementations
             var localFilePath = Path.Combine(
                 webHostEnvironment.ContentRootPath,
                 "UploadedAttachments",
+                taskId.ToString(),
                 fileNameWithExtension
             );
 
@@ -63,7 +64,7 @@ namespace TaskManagerBackend.Repositories.Implementations
             await attachment.File.CopyToAsync(stream);
 
             // https://localhost:1234/Attachments/attachment.extension
-            var urlFilePath = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}{httpContextAccessor.HttpContext.Request.PathBase}/Attachments/{attachment.FileName}{attachment.FileExtension}";
+            var urlFilePath = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}{httpContextAccessor.HttpContext.Request.PathBase}/Attachments/{taskId}/{fileNameWithExtension}";
 
             attachment.FilePath = urlFilePath;
 

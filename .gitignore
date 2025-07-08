@@ -363,5 +363,7 @@ MigrationBackup/
 FodyWeavers.xsd
 
 #Hides uploaded attachments
+TaskManagerBackend/UploadedAttachments/
+**/UploadedAttachments/
 UploadedAttachments/*
 !UploadedAttachments/.gitkeep

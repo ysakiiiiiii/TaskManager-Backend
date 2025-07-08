@@ -9,10 +9,13 @@ namespace TaskManagerBackend.Models.Domain
 
         public string LastName { get; set; } = string.Empty;
 
+        public bool IsActive { get; set; } = true;
         public DateTime UserCreated { get; set; } = DateTime.UtcNow;
         public DateTime? UserModified { get; set; }
 
         public string FullName => $"{FirstName} {LastName}";
+
+
 
     }
 }

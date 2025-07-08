@@ -8,7 +8,7 @@ namespace TaskManagerBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class TaskItemController : ControllerBase
     {
         private readonly ITaskService _taskService;
