@@ -23,8 +23,9 @@
             {
                 Success = false,
                 Message = message,
-                Errors = errors
+                Errors = errors ?? new List<string> { message }
             };
         }
     }
+
 }

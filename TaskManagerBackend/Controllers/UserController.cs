@@ -30,9 +30,21 @@ namespace TaskManagerBackend.Controllers
         public async Task<IActionResult> Login(LoginRequestDto loginRequestDto)
         {
             var response = await _userService.LoginAsync(loginRequestDto);
-            return response.Success
-                ? Ok(response)
-                : Unauthorized(response);
+            if (!response.Success || response.Data is not LoginResponseDto loginData)
+            {
+                return Unauthorized(response);
+            }
+
+            HttpContext.Response.Cookies.Append("jwt", loginData.JwtToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = loginData.TokenExpiration
+            });
+
+            return Ok(ApiResponse.SuccessResponse("Login successful" ));
+
         }
 
         [HttpPatch("ToggleActivation/{userId}")]

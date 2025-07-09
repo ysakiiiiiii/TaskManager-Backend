@@ -32,6 +32,12 @@ namespace TaskManagerBackend.Services
         {
             try
             {
+                var userCheck = await _userManager.FindByEmailAsync(registerRequestDto.Username);
+                if (userCheck != null)
+                { 
+                    return ApiResponse.ErrorResponse("Account already exist. Please login");
+                }
+
                 var user = new User
                 {
                     UserName = registerRequestDto.Username,
@@ -71,7 +77,7 @@ namespace TaskManagerBackend.Services
                 var user = await _userManager.FindByEmailAsync(loginRequestDto.Username);
                 if (user == null || !user.IsActive)
                 {
-                    return ApiResponse.ErrorResponse("Invalid username or password or account is deactivated");
+                    return ApiResponse.ErrorResponse("Account is deactivated or not found");
                 }
 
                 var isPasswordValid = await _userManager.CheckPasswordAsync(user, loginRequestDto.Password);
