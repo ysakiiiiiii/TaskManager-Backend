@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using TaskManagerBackend.DTOs.Category;
+using TaskManagerBackend.DTOs.SearchFilters;
 using TaskManagerBackend.Exceptions;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories.Interfaces;
@@ -57,6 +58,20 @@ namespace TaskManagerBackend.Services
             var deleted = await _categoryRepository.DeleteCategoryAsync(id);
             if (deleted == null)
                 throw new NotFoundException("Category not found or already deleted");
+        }
+
+        public async Task<SearchFiltersDto> GetSearchFiltersAsync()
+        {
+            var statuses = await _categoryRepository.GetAllStatusNamesAsync();
+            var priorities = await _categoryRepository.GetAllPriorityNamesAsync();
+            var categories = await _categoryRepository.GetAllCategoryNamesAsync();
+
+            return new SearchFiltersDto
+            {
+                Statuses = statuses,
+                Priorities = priorities,
+                Categories = categories
+            };
         }
     }
 }

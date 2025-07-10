@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using TaskManagerBackend.DTOs.SearchFilters;
 using TaskManagerBackend.DTOs.User;
 using TaskManagerBackend.Helpers;
 using TaskManagerBackend.Models.Domain;
@@ -15,17 +19,21 @@ namespace TaskManagerBackend.Services
     public class UserService : IUserService
     {
         private readonly UserManager<User> _userManager;
-        private readonly ITokenRepository _tokenRepository;
+        private readonly IUserRepository _tokenRepository;
         private readonly ILogger<UserService> _logger;
+        private readonly IMapper _mapper;
 
         public UserService(
             UserManager<User> userManager,
-            ITokenRepository tokenRepository,
-            ILogger<UserService> logger)
+            IUserRepository tokenRepository,
+            ILogger<UserService> logger, 
+            IMapper mapper
+            )
         {
             _userManager = userManager;
             _tokenRepository = tokenRepository;
             _logger = logger;
+            _mapper = mapper;
         }
 
         public async Task<ApiResponse> RegisterAsync(RegisterRequestDto registerRequestDto)
@@ -137,5 +145,79 @@ namespace TaskManagerBackend.Services
                 return ApiResponse.ErrorResponse("An error occurred while toggling user activation");
             }
         }
+
+        public async Task<ApiResponse> GetCurrentUserAsync(ClaimsPrincipal userPrincipal)
+        {
+            try
+            {
+                var userId = userPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null)
+                    return ApiResponse.ErrorResponse("Unauthorized");
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                    return ApiResponse.ErrorResponse("User not found");
+
+                var roles = await _userManager.GetRolesAsync(user);
+                var role = roles.FirstOrDefault() ?? "User";
+
+                var dto = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Role = role
+                };
+
+                return ApiResponse.SuccessResponse(dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current user");
+                return ApiResponse.ErrorResponse("An error occurred while retrieving user info");
+            }
+        }
+
+
+        public async Task<PaginatedUserResponse> GetPaginatedUsersAsync(bool? isActive, int page, int pageSize)
+        {
+            var usersQuery = _userManager.Users.AsQueryable();
+
+            if (isActive.HasValue)
+                usersQuery = usersQuery.Where(u => u.IsActive == isActive.Value);
+
+            var totalCount = await usersQuery.CountAsync();
+
+            if (pageSize == 0)
+                pageSize = totalCount == 0 ? 1 : totalCount;
+
+            var pagedUsers = await usersQuery
+                .OrderBy(u => u.LastName)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var userDtos = _mapper.Map<List<UserDto>>(pagedUsers);
+
+            var userIds = pagedUsers.Select(u => u.Id);
+            var taskCounts = await _tokenRepository.GetUserTaskStatusCountsAsync(userIds);
+
+            foreach (var userDto in userDtos)
+            {
+                if (taskCounts.TryGetValue(userDto.Id, out var counts))
+                    userDto.TaskStatusCounts = counts;
+            }
+
+            return new PaginatedUserResponse
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+                Items = userDtos
+            };
+        }
+
     }
 }

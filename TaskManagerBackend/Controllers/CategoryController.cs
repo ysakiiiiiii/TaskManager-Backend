@@ -61,4 +61,11 @@ public class CategoryController : ControllerBase
         await _categoryService.DeleteCategoryAsync(id);
         return Ok(ApiResponse.SuccessResponse(null, "Category deleted successfully"));
     }
+
+    [HttpGet("filters")]
+    public async Task<IActionResult> GetSearchFilters()
+    {
+        var searchFilters = await _categoryService.GetSearchFiltersAsync();
+        return Ok(ApiResponse.SuccessResponse(searchFilters, "Search filters fetched successfully"));
+    }
 }

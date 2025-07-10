@@ -1,59 +1,69 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TaskManagerBackend.DTOs.SearchFilters;
 using TaskManagerBackend.DTOs.User;
 using TaskManagerBackend.Helpers;
-using TaskManagerBackend.Services;
+using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Services.Interfaces;
 
-namespace TaskManagerBackend.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class UserController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class UserController : ControllerBase
+    private readonly IUserService _userService;
+
+    public UserController(IUserService userService)
     {
-        private readonly IUserService _userService;
+        _userService = userService;
+    }
 
-        public UserController(IUserService userService)
+
+    [HttpPost("Register")]
+    public async Task<IActionResult> Register(RegisterRequestDto registerRequestDto)
+    {
+        var response = await _userService.RegisterAsync(registerRequestDto);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
+    [HttpPost("Login")]
+    public async Task<IActionResult> Login(LoginRequestDto loginRequestDto)
+    {
+        var response = await _userService.LoginAsync(loginRequestDto);
+        if (!response.Success || response.Data is not LoginResponseDto loginData)
+            return Unauthorized(response);
+
+        HttpContext.Response.Cookies.Append("jwt", loginData.JwtToken, new CookieOptions
         {
-            _userService = userService;
-        }
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = loginData.TokenExpiration
+        });
 
-        [HttpPost("Register")]
-        public async Task<IActionResult> Register(RegisterRequestDto registerRequestDto)
-        {
-            var response = await _userService.RegisterAsync(registerRequestDto);
-            return response.Success
-                ? Ok(response)
-                : BadRequest(response);
-        }
+        return Ok(ApiResponse.SuccessResponse("Login successful"));
+    }
 
-        [HttpPost("Login")]
-        public async Task<IActionResult> Login(LoginRequestDto loginRequestDto)
-        {
-            var response = await _userService.LoginAsync(loginRequestDto);
-            if (!response.Success || response.Data is not LoginResponseDto loginData)
-            {
-                return Unauthorized(response);
-            }
+    [Authorize(Roles = "Admin")]
+    [HttpGet("AllUsers")]
+    public async Task<IActionResult> GetAllUsers([FromQuery] bool? isActive, [FromQuery] int page = 1, [FromQuery] int pageSize = 5)
+    {
+        var response = await _userService.GetPaginatedUsersAsync(isActive, page, pageSize);
+        return Ok(ApiResponse.SuccessResponse(response));
+    } 
 
-            HttpContext.Response.Cookies.Append("jwt", loginData.JwtToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = loginData.TokenExpiration
-            });
+    [Authorize]
+    [HttpGet("CurrentUser")]
+    public async Task<IActionResult> CurrentUser()
+    {
+        var response = await _userService.GetCurrentUserAsync(User);
+        return response.Success ? Ok(response) : Unauthorized(response);
+    }
 
-            return Ok(ApiResponse.SuccessResponse("Login successful" ));
-
-        }
-
-        [HttpPatch("ToggleActivation/{userId}")]
-        public async Task<IActionResult> ToggleActivation(string userId)
-        {
-            var response = await _userService.ToggleUserActivationAsync(userId);
-            return response.Success
-                ? Ok(response)
-                : NotFound(response);
-        }
+    [HttpPost("Logout")]
+    public IActionResult Logout()
+    {
+        Response.Cookies.Delete("jwt");
+        return Ok(ApiResponse.SuccessResponse("Logged out successfully."));
     }
 }

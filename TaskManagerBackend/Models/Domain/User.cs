@@ -15,7 +15,8 @@ namespace TaskManagerBackend.Models.Domain
 
         public string FullName => $"{FirstName} {LastName}";
 
-
+        public ICollection<TaskItem> CreatedTasks { get; set; }
+        public ICollection<TaskAssignment> AssignedTasks { get; set; }
 
     }
 }

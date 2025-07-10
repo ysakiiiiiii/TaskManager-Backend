@@ -1,6 +1,7 @@
-﻿// Controllers/TaskItemController.cs
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using TaskManagerBackend.DTOs.SearchFilters;
 using TaskManagerBackend.DTOs.Task;
 using TaskManagerBackend.Helpers;
 
@@ -8,7 +9,7 @@ namespace TaskManagerBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class TaskItemController : ControllerBase
     {
         private readonly ITaskService _taskService;
@@ -21,9 +22,12 @@ namespace TaskManagerBackend.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllTasks()
+        public async Task<IActionResult> GetAllTasks([FromQuery] TaskQueryParameters filters)
         {
-            var tasks = await _taskService.GetAllTasksAsync();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            var tasks = await _taskService.GetAllTasksAsync(filters, userId, userRole);
             return Ok(ApiResponse.SuccessResponse(tasks));
         }
 
@@ -44,7 +48,7 @@ namespace TaskManagerBackend.Controllers
                     .Select(e => e.ErrorMessage)));
             }
 
-            var userId = this.GetUserId();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var createdTask = await _taskService.CreateTaskAsync(dto, userId);
 
             return CreatedAtAction(nameof(GetTaskById),
@@ -62,7 +66,7 @@ namespace TaskManagerBackend.Controllers
                     .Select(e => e.ErrorMessage)));
             }
 
-            var userId = this.GetUserId();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var updatedTask = await _taskService.UpdateTaskAsync(id, dto, userId);
 
             return Ok(ApiResponse.SuccessResponse(updatedTask, "Task updated successfully"));
@@ -71,7 +75,7 @@ namespace TaskManagerBackend.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask([FromRoute] int id)
         {
-            var userId = this.GetUserId();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             await _taskService.DeleteTaskAsync(id, userId);
             return Ok(ApiResponse.SuccessResponse(null, "Task deleted successfully"));
         }

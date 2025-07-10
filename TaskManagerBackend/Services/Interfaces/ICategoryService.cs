@@ -1,4 +1,5 @@
 ﻿using TaskManagerBackend.DTOs.Category;
+using TaskManagerBackend.DTOs.SearchFilters;
 using TaskManagerBackend.Models.Domain;
 
 namespace TaskManagerBackend.Services.Interfaces
@@ -10,6 +11,7 @@ namespace TaskManagerBackend.Services.Interfaces
         Task<List<CategoryDto>> GetAllCategoriesAsync();
         Task<CategoryDto?> UpdateCategoryAsync(int id, UpdateCategoryRequestDto categoryRequestDto);
         Task DeleteCategoryAsync(int id);
+        Task<SearchFiltersDto> GetSearchFiltersAsync();
     }
 
 }

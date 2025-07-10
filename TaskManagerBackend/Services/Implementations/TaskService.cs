@@ -1,5 +1,7 @@
-﻿// Services/TaskService.cs
-using AutoMapper;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
+using TaskManagerBackend.DTOs.SearchFilters;
 using TaskManagerBackend.DTOs.Task;
 using TaskManagerBackend.Exceptions;
 using TaskManagerBackend.Models.Domain;
@@ -13,39 +15,66 @@ namespace TaskManagerBackend.Services
         private readonly IMapper _mapper;
         private readonly ITaskAssignmentRepository _taskAssignmentRepository;
 
-        public TaskService(ITaskRepository taskRepository, IMapper mapper, ITaskAssignmentRepository taskAssignmentRepository)
+        public TaskService(
+            ITaskRepository taskRepository,
+            IMapper mapper,
+            ITaskAssignmentRepository taskAssignmentRepository)
         {
             _taskRepository = taskRepository;
             _mapper = mapper;
             _taskAssignmentRepository = taskAssignmentRepository;
         }
 
-        public async Task<List<TaskDto>> GetAllTasksAsync()
+        public async Task<PaginatedTaskResponse> GetAllTasksAsync(TaskQueryParameters parameters, string? userId, string? userRole)
         {
-            var tasks = await _taskRepository.GetAllTasksAsync();
-            if (tasks == null || !tasks.Any())
+            var query = await _taskRepository.GetFilteredTasksQueryAsync(
+                parameters.Search,
+                parameters.Category,
+                parameters.Priority,
+                parameters.Status,
+                null, 
+                true,
+                userId,
+                userRole,
+                parameters.Type);
+
+            var totalCount = await query.CountAsync();
+
+            if (parameters.PageSize == 0)
+                parameters.PageSize = totalCount == 0 ? 1 : totalCount;
+
+            var pagedTasks = await query
+                .Skip((parameters.Page - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            var taskDtos = _mapper.Map<List<TaskDto>>(pagedTasks);
+
+            return new PaginatedTaskResponse
             {
-                throw new NotFoundException("No tasks found");
-            }
-            return _mapper.Map<List<TaskDto>>(tasks);
+                Page = parameters.Page,
+                PageSize = parameters.PageSize,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling((double)totalCount / parameters.PageSize),
+                Items = taskDtos
+            };
         }
+
 
         public async Task<TaskDto> GetTaskByIdAsync(int id)
         {
             var task = await _taskRepository.GetTaskByIdAsync(id)
                 ?? throw new NotFoundException($"Task with ID {id} not found");
+
             return _mapper.Map<TaskDto>(task);
         }
 
         public async Task<TaskDto> CreateTaskAsync(AddTaskRequestDto dto, string userId)
         {
             if (string.IsNullOrEmpty(userId))
-            {
                 throw new ForbiddenException("User not authenticated");
-            }
 
             var taskItem = _mapper.Map<TaskItem>(dto);
-
             taskItem.CreatedById = userId;
             taskItem.DateCreated = DateTime.UtcNow;
 
@@ -64,15 +93,13 @@ namespace TaskManagerBackend.Services
                 }
             }
 
-            return _mapper.Map<TaskDto>(createdTask);
+            return await GetTaskByIdAsync(createdTask.Id);
         }
 
         public async Task<TaskDto> UpdateTaskAsync(int taskId, UpdateTaskRequestDto dto, string userId)
         {
             if (string.IsNullOrEmpty(userId))
-            {
                 throw new ForbiddenException("User not authenticated");
-            }
 
             var task = await _taskRepository.GetTaskByIdAsync(taskId)
                 ?? throw new NotFoundException($"Task with ID {taskId} not found");
@@ -93,7 +120,8 @@ namespace TaskManagerBackend.Services
             {
                 foreach (var item in dto.ChecklistItems)
                 {
-                    if (!task.CheckListItems.Any(existing => string.Equals(existing.Description.Trim(), item.Description.Trim(), StringComparison.OrdinalIgnoreCase)))
+                    if (!task.CheckListItems.Any(existing =>
+                        string.Equals(existing.Description.Trim(), item.Description.Trim(), StringComparison.OrdinalIgnoreCase)))
                     {
                         task.CheckListItems.Add(new CheckList
                         {
@@ -105,16 +133,14 @@ namespace TaskManagerBackend.Services
                 }
             }
 
-            var updatedTask = await _taskRepository.UpdateTaskAsync(task);
-            return _mapper.Map<TaskDto>(updatedTask);
+            await _taskRepository.UpdateTaskAsync(task);
+            return await GetTaskByIdAsync(taskId);
         }
 
         public async Task DeleteTaskAsync(int taskId, string userId)
         {
             if (string.IsNullOrEmpty(userId))
-            {
                 throw new ForbiddenException("User not authenticated");
-            }
 
             var task = await _taskRepository.GetTaskByIdAsync(taskId)
                 ?? throw new NotFoundException($"Task with ID {taskId} not found");

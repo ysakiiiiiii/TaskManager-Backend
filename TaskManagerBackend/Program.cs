@@ -146,7 +146,7 @@ builder.Services.AddScoped<ITaskAssignmentService, TaskAssignmentService>();
 builder.Services.AddScoped<ITaskAssignmentRepository, TaskAssignmentRepository>();
 
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<ITokenRepository, TokenRepository>(); 
+builder.Services.AddScoped<IUserRepository, UserRepository>(); 
 builder.Services.AddAutoMapper(typeof(AutoMappingProfile));
 
 builder.Services.AddAuthorization();

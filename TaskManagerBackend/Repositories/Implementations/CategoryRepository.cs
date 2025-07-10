@@ -40,5 +40,29 @@ namespace TaskManagerBackend.Repositories.Implementations
             await dbContext.SaveChangesAsync();
             return category;
         }
+
+        public async Task<List<string>> GetAllCategoryNamesAsync()
+        {
+            return await dbContext.Categories
+                .Select(c => c.Name)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public async Task<List<string>> GetAllPriorityNamesAsync()
+        {
+            return await dbContext.Priorities
+                .Select(p => p.Name)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public async Task<List<string>> GetAllStatusNamesAsync()
+        {
+            return await dbContext.Statuses
+                .Select(s => s.Name)
+                .Distinct()
+                .ToListAsync();
+        }
     }
 }
