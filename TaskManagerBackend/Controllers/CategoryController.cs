@@ -6,7 +6,6 @@ using TaskManagerBackend.Services.Interfaces;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public class CategoryController : ControllerBase
 {
     private readonly ICategoryService _categoryService;
@@ -68,4 +67,18 @@ public class CategoryController : ControllerBase
         var searchFilters = await _categoryService.GetSearchFiltersAsync();
         return Ok(ApiResponse.SuccessResponse(searchFilters, "Search filters fetched successfully"));
     }
+
+    [HttpPost("{id}/reassign-and-delete")]
+    public async Task<IActionResult> ReassignAndDeleteCategory(int id, [FromBody] ReassignCategoryRequestDto dto)
+    {
+        if (id == dto.NewCategoryId)
+            return BadRequest(ApiResponse.ErrorResponse("Cannot reassign to the same category."));
+
+        await _categoryService.ReassignTasksAndDeleteCategoryAsync(id, dto.NewCategoryId);
+
+        return Ok(ApiResponse.SuccessResponse(null, "Tasks reassigned and category deleted."));
+    }
+
+
+
 }

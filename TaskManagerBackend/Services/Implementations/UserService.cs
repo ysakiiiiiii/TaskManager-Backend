@@ -170,6 +170,14 @@ namespace TaskManagerBackend.Services
                     Role = role
                 };
 
+                var breakdown = await _tokenRepository.GetSingleUserTaskBreakdownAsync(user.Id);
+                if (breakdown != null)
+                {
+                    dto.TaskStatusCounts = breakdown.StatusCounts;
+                    dto.TaskPriorityCounts = breakdown.PriorityCounts;
+                    dto.TaskCategoryCounts = breakdown.CategoryCounts;
+                }
+
                 return ApiResponse.SuccessResponse(dto);
             }
             catch (Exception ex)
@@ -180,12 +188,24 @@ namespace TaskManagerBackend.Services
         }
 
 
-        public async Task<PaginatedUserResponse> GetPaginatedUsersAsync(bool? isActive, int page, int pageSize)
+
+        public async Task<PaginatedUserResponse> GetPaginatedUsersAsync(ClaimsPrincipal userPrincipal, bool? isActive, int page, int pageSize)
         {
+            var requestingUserId = userPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
+            var requestingUser = await _userManager.FindByIdAsync(requestingUserId);
+            var roles = await _userManager.GetRolesAsync(requestingUser);
+            var isAdmin = roles.Contains("Admin");
+
             var usersQuery = _userManager.Users.AsQueryable();
 
             if (isActive.HasValue)
                 usersQuery = usersQuery.Where(u => u.IsActive == isActive.Value);
+
+            if (!isAdmin)
+            {
+                var adminUserIds = (await _userManager.GetUsersInRoleAsync("Admin")).Select(u => u.Id);
+                usersQuery = usersQuery.Where(u => !adminUserIds.Contains(u.Id));
+            }
 
             var totalCount = await usersQuery.CountAsync();
 
@@ -201,12 +221,16 @@ namespace TaskManagerBackend.Services
             var userDtos = _mapper.Map<List<UserDto>>(pagedUsers);
 
             var userIds = pagedUsers.Select(u => u.Id);
-            var taskCounts = await _tokenRepository.GetUserTaskStatusCountsAsync(userIds);
+            var taskBreakdown = await _tokenRepository.GetUserTaskBreakdownAsync(userIds);
 
             foreach (var userDto in userDtos)
             {
-                if (taskCounts.TryGetValue(userDto.Id, out var counts))
-                    userDto.TaskStatusCounts = counts;
+                if (taskBreakdown.TryGetValue(userDto.Id, out var breakdown))
+                {
+                    userDto.TaskStatusCounts = breakdown.StatusCounts;
+                    userDto.TaskPriorityCounts = breakdown.PriorityCounts;
+                    userDto.TaskCategoryCounts = breakdown.CategoryCounts;
+                }
             }
 
             return new PaginatedUserResponse
@@ -217,6 +241,65 @@ namespace TaskManagerBackend.Services
                 TotalPages = (int)Math.Ceiling((double)totalCount / pageSize),
                 Items = userDtos
             };
+        }
+
+
+
+        public async Task<ApiResponse> GetUserStatsAsync(ClaimsPrincipal userPrincipal)
+        {
+            try
+            {
+                var userId = userPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null)
+                    return ApiResponse.ErrorResponse("Unauthorized");
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                    return ApiResponse.ErrorResponse("User not found");
+
+                var roles = await _userManager.GetRolesAsync(user);
+                var isAdmin = roles.Contains("Admin");
+
+                if (isAdmin)
+                {
+                    var allUsers = await _userManager.Users.ToListAsync();
+                    var userDtos = _mapper.Map<List<UserDto>>(allUsers);
+
+                    var userIds = allUsers.Select(u => u.Id);
+                    var taskBreakdowns = await _tokenRepository.GetUserTaskBreakdownAsync(userIds);
+
+                    foreach (var dto in userDtos)
+                    {
+                        if (taskBreakdowns.TryGetValue(dto.Id, out var breakdown))
+                        {
+                            dto.TaskStatusCounts = breakdown.StatusCounts;
+                            dto.TaskPriorityCounts = breakdown.PriorityCounts;
+                            dto.TaskCategoryCounts = breakdown.CategoryCounts;
+                        }
+                    }
+
+                    return ApiResponse.SuccessResponse(userDtos);
+                }
+                else
+                {
+                    var dto = _mapper.Map<UserDto>(user);
+                    var breakdown = await _tokenRepository.GetSingleUserTaskBreakdownAsync(user.Id);
+
+                    if (breakdown != null)
+                    {
+                        dto.TaskStatusCounts = breakdown.StatusCounts;
+                        dto.TaskPriorityCounts = breakdown.PriorityCounts;
+                        dto.TaskCategoryCounts = breakdown.CategoryCounts;
+                    }
+
+                    return ApiResponse.SuccessResponse(new List<UserDto> { dto });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching user stats");
+                return ApiResponse.ErrorResponse("An error occurred while fetching user stats.");
+            }
         }
 
     }

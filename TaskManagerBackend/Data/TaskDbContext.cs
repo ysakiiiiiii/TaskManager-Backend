@@ -83,7 +83,10 @@ namespace TaskManagerBackend.Data
             builder.Entity<TaskItem>()
                 .HasOne(t => t.Category)
                 .WithMany()
-                .HasForeignKey(t => t.CategoryId);
+                .HasForeignKey(t => t.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+
 
             builder.Entity<TaskItem>()
                 .HasOne(t => t.Priority)
@@ -134,7 +137,6 @@ namespace TaskManagerBackend.Data
              .HasOne(ta => ta.User)
              .WithMany(u => u.AssignedTasks)
              .HasForeignKey(ta => ta.UserId);
-
 
 
             builder.Entity<CheckList>()

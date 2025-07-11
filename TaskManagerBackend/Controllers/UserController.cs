@@ -44,21 +44,30 @@ public class UserController : ControllerBase
         return Ok(ApiResponse.SuccessResponse("Login successful"));
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize] 
     [HttpGet("AllUsers")]
     public async Task<IActionResult> GetAllUsers([FromQuery] bool? isActive, [FromQuery] int page = 1, [FromQuery] int pageSize = 5)
     {
-        var response = await _userService.GetPaginatedUsersAsync(isActive, page, pageSize);
+        var response = await _userService.GetPaginatedUsersAsync(User, isActive, page, pageSize);
         return Ok(ApiResponse.SuccessResponse(response));
-    } 
+    }
 
-    [Authorize]
+
     [HttpGet("CurrentUser")]
     public async Task<IActionResult> CurrentUser()
     {
         var response = await _userService.GetCurrentUserAsync(User);
         return response.Success ? Ok(response) : Unauthorized(response);
     }
+
+    [Authorize]
+    [HttpGet("UserStats")]
+    public async Task<IActionResult> GetUserStats()
+    {
+        var response = await _userService.GetUserStatsAsync(User);
+        return response.Success ? Ok(response) : Unauthorized(response);
+    }
+
 
     [HttpPost("Logout")]
     public IActionResult Logout()

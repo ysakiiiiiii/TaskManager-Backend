@@ -12,9 +12,8 @@ namespace TaskManagerBackend.DTOs.Comment
         
         [Required]
         public string UserId { get; init; } = string.Empty;
-        
         public string UserName { get; init; } = string.Empty;
-        public string UserAvatar { get; init; } = string.Empty;
+        public string? UserAvatar { get; init; } = string.Empty;
         
         [Required]
         [MaxLength(2000)]

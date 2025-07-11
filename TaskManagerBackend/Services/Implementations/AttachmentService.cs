@@ -82,8 +82,9 @@ namespace TaskManagerBackend.Services
             var task = await _taskRepository.GetTaskByIdAsync(taskId)
                 ?? throw new NotFoundException("Task not found");
 
-            if (!task.AssignedUsers.Any(u => u.UserId == userId))
+            if (task.CreatedById != userId && !task.AssignedUsers.Any(u => u.UserId == userId))
                 throw new ForbiddenException("You are not allowed to upload to this task");
+
 
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf", ".docx", ".xlsx", ".pptx" };
             var extension = Path.GetExtension(request.File.FileName).ToLowerInvariant();

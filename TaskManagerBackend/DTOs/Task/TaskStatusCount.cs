@@ -2,7 +2,7 @@
 {
     public record TaskStatusCount
     {
-        public int StatusId { get; init; }
+        public int Id { get; init; }
         public int Count { get; init; }
     }
 

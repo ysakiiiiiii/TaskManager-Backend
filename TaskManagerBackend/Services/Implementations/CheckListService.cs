@@ -40,7 +40,7 @@ namespace TaskManagerBackend.Services
         {
             var task = await _taskRepository.GetTaskByIdAsync(taskId) ?? throw new NotFoundException("Task not found");
 
-            if (!task.AssignedUsers.Any(u => u.UserId == userId))
+            if (task.CreatedById != userId && !task.AssignedUsers.Any(u => u.UserId == userId))
                 throw new ForbiddenException("You are not allowed to add checklist items to this task");
             
             var items = _mapper.Map<List<CheckList>>(dto.Items);
@@ -100,8 +100,9 @@ namespace TaskManagerBackend.Services
             var task = await _taskRepository.GetTaskByIdAsync(item.TaskId)
                        ?? throw new NotFoundException("Task not found");
 
-            if (!task.AssignedUsers.Any(u => u.UserId == userId))
+            if (task.CreatedById != userId && !task.AssignedUsers.Any(u => u.UserId == userId))
                 throw new ForbiddenException("You are not allowed to modify this checklist item");
+
 
             item.IsCompleted = !item.IsCompleted;
             await _checkListRepository.UpdateCheckListAsync(item);

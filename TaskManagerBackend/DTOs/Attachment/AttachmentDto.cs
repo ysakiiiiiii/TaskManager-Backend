@@ -9,6 +9,7 @@
         public string FileName { get; init; }
         public string FileExtension { get; init; }
         public string FilePath { get; init; }
+        public string? ContentType { get; set; }
         public DateTime DateUploaded { get; init; }
         public string UploadedById { get; init; }
     }

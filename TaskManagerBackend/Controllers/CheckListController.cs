@@ -34,8 +34,8 @@ public class CheckListController : ControllerBase
         return Ok(ApiResponse.SuccessResponse(created, "Checklist item(s) added successfully"));
     }
 
-    [HttpPut]
-    public async Task<IActionResult> UpdateCheckList([FromBody] UpdateCheckListRequestDto dto)
+    [HttpPut("{taskId}")]
+    public async Task<IActionResult> UpdateCheckList([FromRoute] int taskId, [FromBody] UpdateCheckListRequestDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ApiResponse.ErrorResponse("Invalid input", ModelState.ToErrorList()));
@@ -44,6 +44,8 @@ public class CheckListController : ControllerBase
         var updated = await _checkListService.UpdateCheckListAsync(userId, dto);
         return Ok(ApiResponse.SuccessResponse(updated, "Checklist item(s) updated successfully"));
     }
+
+
 
     [HttpDelete("{checkListId}")]
     public async Task<IActionResult> DeleteCheckList([FromRoute] int checkListId)

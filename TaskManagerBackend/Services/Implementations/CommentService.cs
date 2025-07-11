@@ -45,11 +45,10 @@ namespace TaskManagerBackend.Services
         public async Task<CommentDto> CreateCommentAsync(int taskId, CreateCommentRequestDto dto, string userId)
         {
             var task = await _taskRepository.GetTaskByIdAsync(taskId);
-            if (!task.AssignedUsers.Any(u => u.UserId == userId))
+            if (task.CreatedById != userId && !task.AssignedUsers.Any(u => u.UserId == userId))
                 throw new ForbiddenException("You are not assigned to this task and cannot comment.");
 
             if(task == null) throw new NotFoundException($"Task with ID {taskId} not found");
-
 
 
             var comment = _mapper.Map<Comment>(dto);

@@ -11,6 +11,8 @@ namespace TaskManagerBackend.Services.Interfaces
         Task<List<CategoryDto>> GetAllCategoriesAsync();
         Task<CategoryDto?> UpdateCategoryAsync(int id, UpdateCategoryRequestDto categoryRequestDto);
         Task DeleteCategoryAsync(int id);
+        Task ReassignTasksAndDeleteCategoryAsync(int oldCategoryId, int newCategoryId);
+
         Task<SearchFiltersDto> GetSearchFiltersAsync();
     }
 

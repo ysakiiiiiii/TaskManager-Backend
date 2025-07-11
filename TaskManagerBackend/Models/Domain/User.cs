@@ -8,8 +8,8 @@ namespace TaskManagerBackend.Models.Domain
         public string FirstName { get; set; } = string.Empty;
 
         public string LastName { get; set; } = string.Empty;
-
         public bool IsActive { get; set; } = true;
+        public string? UserAvatar { get; init; } = string.Empty;
         public DateTime UserCreated { get; set; } = DateTime.UtcNow;
         public DateTime? UserModified { get; set; }
 

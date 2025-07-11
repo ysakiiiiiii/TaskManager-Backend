@@ -1,4 +1,5 @@
-﻿using TaskManagerBackend.Models.Domain;
+﻿using TaskManagerBackend.DTOs.SearchFilters;
+using TaskManagerBackend.Models.Domain;
 
 namespace TaskManagerBackend.Repositories.Interfaces
 {
@@ -6,12 +7,15 @@ namespace TaskManagerBackend.Repositories.Interfaces
     {
         Task<Category?> GetCategoryByIdAsync(int id);
         Task<List<Category>> GetAllCategoryAsync();
+        Task ReassignTasksToCategoryAsync(int oldCategoryId, int newCategoryId);
+
         Task<Category> CreateCategoryAsync(Category category);
         Task<Category> UpdateCategoryAsync(int id, Category category);
+
         Task<Category> DeleteCategoryAsync(int id);
-        Task<List<string>> GetAllCategoryNamesAsync();
-        Task<List<string>> GetAllPriorityNamesAsync();
-        Task<List<string>> GetAllStatusNamesAsync();
+        Task<List<BasicDto>> GetAllCategoriesWithIdAsync();
+        Task<List<BasicDto>> GetAllPrioritiesWithIdAsync();
+        Task<List<BasicDto>> GetAllStatusesWithIdAsync();
 
     }
 }

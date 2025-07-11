@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TaskManagerBackend.Data;
+using TaskManagerBackend.DTOs.Attachment;
+using TaskManagerBackend.DTOs.CheckList;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories.Interfaces;
 
@@ -20,6 +22,11 @@ namespace TaskManagerBackend.Repositories.Implementations
                 .Include(t => t.AssignedUsers).ThenInclude(ta => ta.User)
                 .Include(t => t.CheckListItems)
                 .Include(t => t.Attachments)
+                .Include(t => t.Comments)
+                .Include(t => t.Category)
+                .Include(t => t.Priority)
+                .Include(t => t.Status)
+                .Include(t => t.CreatedBy)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 
@@ -44,6 +51,7 @@ namespace TaskManagerBackend.Repositories.Implementations
                 .Include(t => t.CreatedBy)
                 .AsQueryable();
 
+            // Role-based filtering for regular users
             if (userRole?.ToLower() != "admin")
             {
                 if (!string.IsNullOrEmpty(type))
@@ -65,15 +73,7 @@ namespace TaskManagerBackend.Repositories.Implementations
                 }
             }
 
-
-            if (!string.IsNullOrEmpty(type))
-            {
-                if (type == "created")
-                    query = query.Where(t => t.CreatedById == userId);
-                else if (type == "assigned")
-                    query = query.Where(t => t.AssignedUsers.Any(a => a.UserId == userId));
-            }
-
+            // Filter by search
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(t =>
@@ -82,6 +82,7 @@ namespace TaskManagerBackend.Repositories.Implementations
                         (au.User.FirstName + " " + au.User.LastName).Contains(search)));
             }
 
+            // Filter by category, priority, and status
             if (!string.IsNullOrWhiteSpace(category))
                 query = query.Where(t => t.Category.Name == category);
 
@@ -91,7 +92,7 @@ namespace TaskManagerBackend.Repositories.Implementations
             if (!string.IsNullOrWhiteSpace(status))
                 query = query.Where(t => t.Status.Name == status);
 
-            // Sorting
+            // Sorting logic
             if (!string.IsNullOrWhiteSpace(sortBy))
             {
                 query = sortBy.ToLower() switch
@@ -111,8 +112,6 @@ namespace TaskManagerBackend.Repositories.Implementations
 
             return await Task.FromResult(query);
         }
-
-
 
         public async Task<TaskItem> CreateTaskAsync(TaskItem task)
         {
@@ -140,5 +139,60 @@ namespace TaskManagerBackend.Repositories.Implementations
             await dbContext.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> UpdateStatusAsync(int taskId, string statusName)
+        {
+            var task = await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == taskId);
+            if (task == null) return false;
+
+            var status = await dbContext.Statuses.FirstOrDefaultAsync(s => s.Name == statusName);
+            if (status == null) return false;
+
+            task.StatusId = status.Id;
+            task.DateModified = DateTime.UtcNow;
+
+            dbContext.Tasks.Update(task);
+            await dbContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task UpdateTaskAssignmentsAsync(int taskId, List<string> assignedUserIds)
+        {
+            var existingAssignments = await dbContext.TaskAssignments
+                .Where(ta => ta.TaskId == taskId)
+                .ToListAsync();
+
+            dbContext.TaskAssignments.RemoveRange(existingAssignments);
+
+            var newAssignments = assignedUserIds.Select(uid => new TaskAssignment
+            {
+                TaskId = taskId,
+                UserId = uid
+            }).ToList();
+
+            await dbContext.TaskAssignments.AddRangeAsync(newAssignments);
+            await dbContext.SaveChangesAsync();
+        }
+
+        public async Task UpdateTaskChecklistItemsAsync(int taskId, List<CheckListDto> checklistItems)
+        {
+            var existingItems = await dbContext.ChecklistItems
+                .Where(cl => cl.TaskId == taskId)
+                .ToListAsync();
+
+            dbContext.ChecklistItems.RemoveRange(existingItems);
+
+            var newItems = checklistItems.Select(item => new CheckList
+            {
+                TaskId = taskId,
+                Description = item.Description,
+                IsCompleted = item.IsCompleted
+            }).ToList();
+
+            await dbContext.ChecklistItems.AddRangeAsync(newItems);
+            await dbContext.SaveChangesAsync();
+        }
+
     }
 }

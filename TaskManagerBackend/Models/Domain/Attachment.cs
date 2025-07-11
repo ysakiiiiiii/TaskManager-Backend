@@ -12,7 +12,7 @@ namespace TaskManagerBackend.Models.Domain
         public IFormFile File { get; set; }
         public string FileName { get; set; }
         public string FilePath { get; set; }
-        public string ContentType { get; set; }
+        public string? ContentType { get; set; }
         public string FileExtension { get; set; }
         public long FileSizeInBytes { get; set; }
         public DateTime DateUploaded { get; set; } = DateTime.UtcNow;

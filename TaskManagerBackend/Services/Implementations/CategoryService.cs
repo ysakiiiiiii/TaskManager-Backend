@@ -62,9 +62,9 @@ namespace TaskManagerBackend.Services
 
         public async Task<SearchFiltersDto> GetSearchFiltersAsync()
         {
-            var statuses = await _categoryRepository.GetAllStatusNamesAsync();
-            var priorities = await _categoryRepository.GetAllPriorityNamesAsync();
-            var categories = await _categoryRepository.GetAllCategoryNamesAsync();
+            var statuses = await _categoryRepository.GetAllStatusesWithIdAsync();
+            var priorities = await _categoryRepository.GetAllPrioritiesWithIdAsync();
+            var categories = await _categoryRepository.GetAllCategoriesWithIdAsync();
 
             return new SearchFiltersDto
             {
@@ -73,5 +73,21 @@ namespace TaskManagerBackend.Services
                 Categories = categories
             };
         }
+
+        public async Task ReassignTasksAndDeleteCategoryAsync(int oldCategoryId, int newCategoryId)
+        {
+            var oldCategory = await _categoryRepository.GetCategoryByIdAsync(oldCategoryId)
+                ?? throw new NotFoundException("Old category not found");
+
+            var newCategory = await _categoryRepository.GetCategoryByIdAsync(newCategoryId)
+                ?? throw new NotFoundException("New category not found");
+
+            if (oldCategory.Id == newCategory.Id)
+                throw new BadRequestException("Old and new categories cannot be the same.");
+
+            await _categoryRepository.ReassignTasksToCategoryAsync(oldCategoryId, newCategoryId);
+            await _categoryRepository.DeleteCategoryAsync(oldCategoryId);
+        }
+
     }
 }

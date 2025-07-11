@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using TaskManagerBackend.DTOs.Attachment;
 using TaskManagerBackend.DTOs.CheckList;
 using TaskManagerBackend.Helpers;
 
@@ -29,6 +30,6 @@ namespace TaskManagerBackend.DTOs.Task
         public DateTime? DueDate { get; set; }
 
         public ICollection<string> AssignedUserIds { get; set; } = new List<string>();
-        public ICollection<CheckListDto> ChecklistItems { get; set; } = new List<CheckListDto>();
+
     }
 }

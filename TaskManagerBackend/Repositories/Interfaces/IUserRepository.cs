@@ -7,7 +7,9 @@ namespace TaskManagerBackend.Repositories.Interfaces
     {
         string CreateJWTToken(User user, List<string> roles);
         DateTime? GetTokenExpiration(string jwtToken);
-        Task<Dictionary<string, List<TaskStatusCount>>> GetUserTaskStatusCountsAsync(IEnumerable<string> userIds);
+        Task<Dictionary<string, UserTaskCounts>> GetUserTaskBreakdownAsync(IEnumerable<string> userIds);
+        Task<UserTaskCounts?> GetSingleUserTaskBreakdownAsync(string userId);
+
 
 
     }

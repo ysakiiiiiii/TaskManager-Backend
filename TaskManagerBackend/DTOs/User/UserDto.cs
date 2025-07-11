@@ -13,6 +13,7 @@ namespace TaskManagerBackend.DTOs.User
         public string LastName { get; init; }
         public string Role { get; set; }
         public string FullName => $"{FirstName} {LastName}";
+        public bool IsActive { get; set; }
 
         [EmailAddress]
         public string Email { get; init; }
@@ -20,7 +21,9 @@ namespace TaskManagerBackend.DTOs.User
         public DateTime UserCreated { get; init; }
         public DateTime? UserModified { get; init; }
 
-        public List<TaskStatusCount> TaskStatusCounts { get; set; } = new();
+        public List<TaskStatusCount>? TaskStatusCounts { get; set; }
+        public List<TaskPriorityCount>? TaskPriorityCounts { get; set; }
+        public List<TaskCategoryCount>? TaskCategoryCounts { get; set; }
 
 
     }

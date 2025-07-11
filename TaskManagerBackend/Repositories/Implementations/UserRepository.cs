@@ -59,42 +59,85 @@ namespace TaskManagerBackend.Repositories.Implementations
             return token.ValidTo;
         }
 
-        public async Task<Dictionary<string, List<TaskStatusCount>>> GetUserTaskStatusCountsAsync(IEnumerable<string> userIds)
+        public async Task<Dictionary<string, UserTaskCounts>> GetUserTaskBreakdownAsync(IEnumerable<string> userIds)
         {
-            var result = await _dbContext.TaskAssignments
-             .Where(ta => userIds.Contains(ta.UserId))
-             .Select(ta => new
-             {
-                 ta.UserId,
-                 ta.Task.StatusId
-             })
-             .GroupBy(x => new { x.UserId, x.StatusId })
-             .Select(g => new
-             {
-                 g.Key.UserId,
-                 g.Key.StatusId,
-                 Count = g.Count()
-             })
-             .ToListAsync();
-
-
-            var count = new Dictionary<string, List<TaskStatusCount>>();
-
-            foreach (var entry in result)
-            {
-                if (!count.ContainsKey(entry.UserId))
-                    count[entry.UserId] = new List<TaskStatusCount>();
-
-                count[entry.UserId].Add(new TaskStatusCount
+            var query = _dbContext.TaskAssignments
+                .Where(ta => userIds.Contains(ta.UserId))
+                .Select(ta => new
                 {
-                    StatusId = entry.StatusId,
-                    Count = entry.Count
+                    ta.UserId,
+                    ta.Task.StatusId,
+                    ta.Task.PriorityId,
+                    ta.Task.CategoryId
                 });
+
+            var data = await query.ToListAsync();
+
+            var result = new Dictionary<string, UserTaskCounts>();
+
+            foreach (var group in data.GroupBy(x => x.UserId))
+            {
+                var userCounts = new UserTaskCounts();
+
+                userCounts.StatusCounts = group
+                    .GroupBy(x => x.StatusId)
+                    .Select(g => new TaskStatusCount { Id = g.Key, Count = g.Count() })
+                    .ToList();
+
+                userCounts.PriorityCounts = group
+                    .GroupBy(x => x.PriorityId)
+                    .Select(g => new TaskPriorityCount { Id = g.Key, Count = g.Count() })
+                    .ToList();
+
+                userCounts.CategoryCounts = group
+                    .GroupBy(x => x.CategoryId)
+                    .Select(g => new TaskCategoryCount { Id = g.Key, Count = g.Count() })
+                    .ToList();
+
+                result[group.Key] = userCounts;
             }
 
-            return count;
-
+            return result;
         }
+
+        public async Task<UserTaskCounts?> GetSingleUserTaskBreakdownAsync(string userId)
+        {
+            var data = await _dbContext.TaskAssignments
+                .Where(ta => ta.UserId == userId)
+                .Select(ta => new
+                {
+                    ta.Task.StatusId,
+                    ta.Task.PriorityId,
+                    ta.Task.CategoryId
+                })
+                .ToListAsync();
+
+            if (!data.Any()) return null;
+
+            var result = new UserTaskCounts
+            {
+                StatusCounts = data
+                    .GroupBy(x => x.StatusId)
+                    .Select(g => new TaskStatusCount { Id = g.Key, Count = g.Count() })
+                    .ToList(),
+
+                PriorityCounts = data
+                    .GroupBy(x => x.PriorityId)
+                    .Select(g => new TaskPriorityCount { Id = g.Key, Count = g.Count() })
+                    .ToList(),
+
+                CategoryCounts = data
+                    .GroupBy(x => x.CategoryId)
+                    .Select(g => new TaskCategoryCount { Id = g.Key, Count = g.Count() })
+                    .ToList()
+            };
+
+            return result;
+        }
+
+
+
+
 
     }
 }

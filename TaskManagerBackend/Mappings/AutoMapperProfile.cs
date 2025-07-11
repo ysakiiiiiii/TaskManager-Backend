@@ -37,7 +37,6 @@ namespace TaskManagerBackend.Mappings
 
             // AddTaskRequestDto → TaskItem
             CreateMap<AddTaskRequestDto, TaskItem>()
-                .ForMember(dest => dest.CheckListItems, opt => opt.MapFrom(src => src.ChecklistItems))
                 .ForMember(dest => dest.AssignedUsers, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedById, opt => opt.Ignore())
                 .ForMember(dest => dest.DateCreated, opt => opt.Ignore())
@@ -70,21 +69,27 @@ namespace TaskManagerBackend.Mappings
             CreateMap<CheckListDto, CheckList>()
                 .ForMember(dest => dest.IsCompleted, opt => opt.MapFrom(_ => false))
                 .ForMember(dest => dest.TaskId, opt => opt.Ignore());
+
             CreateMap<CheckList, CheckListDto>().ReverseMap();
+
+            CreateMap<AddItemDto, CheckList>()
+                .ForMember(dest => dest.TaskId, opt => opt.Ignore())
+                .ForMember(dest => dest.Id, opt => opt.Ignore()); 
 
             CreateMap<UpdateChecklistItemDto, CheckList>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskId, opt => opt.Ignore());
+
 
             // Attachment mappings
             CreateMap<Attachment, AttachmentDto>().ReverseMap();
 
             CreateMap<UploadAttachmentRequestDto, Attachment>()
                 .ForMember(dest => dest.FileName, opt => opt.MapFrom(src => src.FileName.Trim().ToLowerInvariant()))
-                .ForMember(dest => dest.ContentType, opt => opt.MapFrom(src => src.File.ContentType))
                 .ForMember(dest => dest.FileExtension, opt => opt.MapFrom(src => Path.GetExtension(src.File.FileName).ToLowerInvariant()))
                 .ForMember(dest => dest.FileSizeInBytes, opt => opt.MapFrom(src => src.File.Length))
                 .ForMember(dest => dest.File, opt => opt.MapFrom(src => src.File))
+                 .ForMember(dest => dest.ContentType, opt => opt.Ignore())
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskId, opt => opt.Ignore())
                 .ForMember(dest => dest.UploadedById, opt => opt.Ignore())
@@ -96,7 +101,10 @@ namespace TaskManagerBackend.Mappings
             CreateMap<Category, CategoryDto>().ReverseMap();
 
             // Comment mappings
-            CreateMap<Comment, CommentDto>().ReverseMap();
+             CreateMap<Comment, CommentDto>()
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FirstName + " " + src.User.LastName))
+                .ForMember(dest => dest.UserAvatar, opt => opt.MapFrom(src => src.User.UserAvatar)); 
+
             CreateMap<CreateCommentRequestDto, Comment>();
             CreateMap<UpdateCommentRequestDto, Comment>()
                 .ForMember(dest => dest.DateUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));

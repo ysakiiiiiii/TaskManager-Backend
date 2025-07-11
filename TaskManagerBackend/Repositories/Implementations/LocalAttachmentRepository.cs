@@ -59,9 +59,17 @@ namespace TaskManagerBackend.Repositories.Implementations
                 fileNameWithExtension
             );
 
-            //Upload Image to Local Path
+            // Ensure directory exists
+            var folderPath = Path.GetDirectoryName(localFilePath);
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            // Upload Image to Local Path
             using var stream = new FileStream(localFilePath, FileMode.Create);
             await attachment.File.CopyToAsync(stream);
+
 
             // https://localhost:1234/Attachments/attachment.extension
             var urlFilePath = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}{httpContextAccessor.HttpContext.Request.PathBase}/Attachments/{taskId}/{fileNameWithExtension}";

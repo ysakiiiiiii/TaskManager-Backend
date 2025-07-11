@@ -1,7 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TaskManagerBackend.Data;
+using TaskManagerBackend.DTOs.Comment;
+using TaskManagerBackend.Helpers;
 using TaskManagerBackend.Models.Domain;
 using TaskManagerBackend.Repositories.Interfaces;
+using TaskManagerBackend.Services.Interfaces;
 
 namespace TaskManagerBackend.Repositories.Implementations
 {
@@ -22,12 +27,13 @@ namespace TaskManagerBackend.Repositories.Implementations
 
         public async Task<List<Comment>> GetCommentsByTaskAsync(int taskId)
         {
-            var comments = await dbContext.Comments
+            return await dbContext.Comments
                 .Where(c => c.TaskId == taskId)
+                .Include(c => c.User)
+                .OrderBy(c => c.DateCreated)
                 .ToListAsync();
-
-            return comments;
         }
+
 
         public async Task<Comment> CreateCommentAsync(Comment comment)
         {

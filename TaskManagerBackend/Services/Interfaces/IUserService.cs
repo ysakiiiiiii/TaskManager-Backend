@@ -10,9 +10,11 @@ namespace TaskManagerBackend.Services.Interfaces
     {
         Task<ApiResponse> RegisterAsync(RegisterRequestDto registerRequestDto);
         Task<ApiResponse> LoginAsync(LoginRequestDto loginRequestDto);
-        Task<PaginatedUserResponse> GetPaginatedUsersAsync(bool? isActive, int page, int pageSize);
+        Task<PaginatedUserResponse> GetPaginatedUsersAsync(ClaimsPrincipal userPrincipal, bool? isActive, int page, int pageSize);
         Task<ApiResponse> ToggleUserActivationAsync(string userId);
         Task<ApiResponse> GetCurrentUserAsync(ClaimsPrincipal user);
+        Task<ApiResponse> GetUserStatsAsync(ClaimsPrincipal userPrincipal);
+
 
     }
 }

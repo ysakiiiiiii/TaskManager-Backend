@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using TaskManagerBackend.DTOs.SearchFilters;
+using TaskManagerBackend.DTOs.Status;
 using TaskManagerBackend.DTOs.Task;
 using TaskManagerBackend.Helpers;
 
@@ -72,12 +73,29 @@ namespace TaskManagerBackend.Controllers
             return Ok(ApiResponse.SuccessResponse(updatedTask, "Task updated successfully"));
         }
 
+
+        [Authorize]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTask([FromRoute] int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            await _taskService.DeleteTaskAsync(id, userId);
-            return Ok(ApiResponse.SuccessResponse(null, "Task deleted successfully"));
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isAdmin = User.IsInRole("admin");
+
+            await _taskService.DeleteTaskAsync(id, userId, isAdmin);
+
+            return NoContent();
         }
+
+
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] StatusUpdateDto dto)
+        {
+            var updated = await _taskService.UpdateStatusAsync(id, dto.StatusName);
+            if (!updated) return NotFound();
+
+            return Ok();
+        }
+
+
     }
 }
