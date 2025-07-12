@@ -44,13 +44,18 @@ public class UserController : ControllerBase
         return Ok(ApiResponse.SuccessResponse("Login successful"));
     }
 
-    [Authorize] 
+    [Authorize(Roles ="Admin")]
     [HttpGet("AllUsers")]
-    public async Task<IActionResult> GetAllUsers([FromQuery] bool? isActive, [FromQuery] int page = 1, [FromQuery] int pageSize = 5)
+    public async Task<IActionResult> GetAllUsers(
+    [FromQuery] bool? isActive,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 5,
+    [FromQuery] string? search = null)
     {
-        var response = await _userService.GetPaginatedUsersAsync(User, isActive, page, pageSize);
+        var response = await _userService.GetPaginatedUsersAsync(User, isActive, page, pageSize, search);
         return Ok(ApiResponse.SuccessResponse(response));
     }
+
 
 
     [HttpGet("CurrentUser")]
@@ -75,4 +80,15 @@ public class UserController : ControllerBase
         Response.Cookies.Delete("jwt");
         return Ok(ApiResponse.SuccessResponse("Logged out successfully."));
     }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("ToggleStatus/{userId}")]
+    public async Task<IActionResult> ToggleUserStatus(string userId)
+    {
+        var response = await _userService.ToggleUserStatusAsync(userId);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
+
+
 }

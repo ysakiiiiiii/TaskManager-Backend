@@ -117,7 +117,7 @@ namespace TaskManagerBackend.Services
             }
         }
 
-        public async Task<ApiResponse> ToggleUserActivationAsync(string userId)
+        public async Task<ApiResponse> ToggleUserStatusAsync(string userId)
         {
             try
             {
@@ -145,6 +145,7 @@ namespace TaskManagerBackend.Services
                 return ApiResponse.ErrorResponse("An error occurred while toggling user activation");
             }
         }
+
 
         public async Task<ApiResponse> GetCurrentUserAsync(ClaimsPrincipal userPrincipal)
         {
@@ -189,7 +190,12 @@ namespace TaskManagerBackend.Services
 
 
 
-        public async Task<PaginatedUserResponse> GetPaginatedUsersAsync(ClaimsPrincipal userPrincipal, bool? isActive, int page, int pageSize)
+        public async Task<PaginatedUserResponse> GetPaginatedUsersAsync(
+            ClaimsPrincipal userPrincipal,
+            bool? isActive,
+            int page,
+            int pageSize,
+            string? search = null)
         {
             var requestingUserId = userPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
             var requestingUser = await _userManager.FindByIdAsync(requestingUserId);
@@ -207,6 +213,15 @@ namespace TaskManagerBackend.Services
                 usersQuery = usersQuery.Where(u => !adminUserIds.Contains(u.Id));
             }
 
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var loweredSearch = search.Trim().ToLower();
+                usersQuery = usersQuery.Where(u =>
+                    u.FirstName.ToLower().Contains(loweredSearch) ||
+                    u.LastName.ToLower().Contains(loweredSearch) ||
+                    u.Email.ToLower().Contains(loweredSearch));
+            }
+
             var totalCount = await usersQuery.CountAsync();
 
             if (pageSize == 0)
@@ -219,7 +234,6 @@ namespace TaskManagerBackend.Services
                 .ToListAsync();
 
             var userDtos = _mapper.Map<List<UserDto>>(pagedUsers);
-
             var userIds = pagedUsers.Select(u => u.Id);
             var taskBreakdown = await _tokenRepository.GetUserTaskBreakdownAsync(userIds);
 
@@ -242,8 +256,6 @@ namespace TaskManagerBackend.Services
                 Items = userDtos
             };
         }
-
-
 
         public async Task<ApiResponse> GetUserStatsAsync(ClaimsPrincipal userPrincipal)
         {

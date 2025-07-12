@@ -86,7 +86,7 @@ namespace TaskManagerBackend.Controllers
             return NoContent();
         }
 
-
+        [Authorize(Roles ="Admin")]
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] StatusUpdateDto dto)
         {

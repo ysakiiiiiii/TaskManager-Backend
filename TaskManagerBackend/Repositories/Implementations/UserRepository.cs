@@ -69,6 +69,7 @@ namespace TaskManagerBackend.Repositories.Implementations
                     ta.Task.StatusId,
                     ta.Task.PriorityId,
                     ta.Task.CategoryId
+
                 });
 
             var data = await query.ToListAsync();
@@ -134,10 +135,5 @@ namespace TaskManagerBackend.Repositories.Implementations
 
             return result;
         }
-
-
-
-
-
     }
 }
